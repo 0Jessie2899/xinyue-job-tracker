@@ -15,11 +15,13 @@
 
 选择“待测评、待 AI 面、待一面、待二面、待终面、待 HR 面”时，对应时间为必填项；这些事项会自动进入求职看板，并按时间先后排序。待投递目标使用独立的精简表单。
 
+新版界面使用紫色鸢尾花背景和半透明玻璃卡片，并提供“Jessie的求职之旅”动态封面。
+
 数据保存在当前浏览器的 `localStorage` 中，不会自动同步到其他电脑或浏览器。建议在网站底部定期点击“导出数据备份”。
 
 ## GitHub Pages 部署
 
-1. 将本项目全部文件上传到 GitHub 仓库的 `main` 分支根目录。
+1. 将本项目全部文件（包括 `assets` 文件夹）上传到 GitHub 仓库的 `main` 分支根目录。
 2. 打开仓库的 `Settings → Pages`。
 3. 在 `Build and deployment` 中选择 `GitHub Actions`。
 4. 等待 `Deploy GitHub Pages` 工作流完成。

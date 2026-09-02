@@ -3,29 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#7c3aed" />
-  <title>熊心悦的秋招台账</title>
+  <meta name="theme-color" content="#6d4a86" />
+  <title>Jessie的求职之旅</title>
   <meta name="description" content="个人秋招投递、进度与面试准备台账" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <section class="cover" id="cover" aria-label="秋招台账封面">
-    <div class="cover-grid"></div>
-    <div class="cover-orb orb-one"></div>
-    <div class="cover-orb orb-two"></div>
-    <div class="cover-orb orb-three"></div>
+  <section class="cover" id="cover" aria-label="Jessie的求职之旅封面">
+    <div class="cover-haze"></div>
+    <img class="cover-iris" src="./assets/iris-flower.webp" alt="" aria-hidden="true" />
     <div class="cover-panel">
-      <span class="cover-mark">熊</span>
+      <span class="cover-mark">J</span>
       <p>2027 CAMPUS RECRUITMENT</p>
-      <h1>秋招投递台账</h1>
+      <h1>Jessie的求职之旅</h1>
       <div class="cover-line"></div>
-      <button class="cover-cta" id="enterTracker" type="button">进入台账 <span aria-hidden="true">→</span></button>
+      <button class="cover-cta" id="enterTracker" type="button">开启旅程 <span aria-hidden="true">→</span></button>
     </div>
   </section>
 
   <div class="shell">
+    <img class="ambient-iris" src="./assets/iris-flower.webp" alt="" aria-hidden="true" />
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><span>熊</span><div><b>秋招台账</b><small>2027 CAMPUS</small></div></div>
+      <div class="brand"><span>J</span><div><b>Jessie求职台账</b><small>JOB JOURNEY</small></div></div>
       <nav id="nav">
         <button class="active" data-page="dashboard"><i>01</i><span>求职看板</span></button>
         <button data-page="applied"><i>02</i><span>投递记录</span></button>
@@ -37,10 +36,10 @@
     <main>
       <header class="topbar">
         <button class="menu-button" id="menuButton" aria-label="打开菜单">☰</button>
-        <div><h1 id="pageTitle">求职看板</h1></div>
-        <div class="profile"><span>熊</span><div><b>熊心悦</b><small>个人秋招空间</small></div></div>
+        <h1 id="pageTitle">求职看板</h1>
+        <div class="profile"><span>J</span><div><b>Jessie</b><small>个人求职空间</small></div></div>
       </header>
-      <div id="notice" class="notice" hidden></div>
+      <div id="notice" class="notice" hidden aria-live="polite"></div>
       <div id="app" class="content"><div class="loading">正在加载台账数据…</div></div>
     </main>
   </div>
@@ -64,9 +63,9 @@
             <label><span>岗位名称</span><input id="role" placeholder="例如：产品经理" /></label>
             <label><span>公司性质</span><input id="companyType" placeholder="国企 / 民企 / 外企" /></label>
             <label class="applied-only"><span>工作地点</span><input id="city" placeholder="城市或办公地" /></label>
-            <label class="applied-only" id="applicationDateField"><span>投递日期</span><input id="applicationDate" type="date" /></label>
+            <label class="applied-only"><span>投递日期</span><input id="applicationDate" type="date" /></label>
             <label class="applied-only"><span>当前进度</span><select id="status"></select></label>
-            <label class="applied-only" id="assessmentField" hidden><span id="deadlineLabel">节点时间 <b>*</b></span><input id="assessmentDeadline" type="datetime-local" /><small id="deadlineHint">当前进度需要填写对应时间</small></label>
+            <label class="applied-only" id="deadlineField" hidden><span id="deadlineLabel">节点时间 <b>*</b></span><input id="assessmentDeadline" type="datetime-local" /><small id="deadlineHint">当前进度需要填写对应时间</small></label>
             <label class="applied-only"><span>投递渠道</span><input id="channel" placeholder="官网 / 内推 / 招聘平台" /></label>
             <label class="applied-only"><span>岗位期望值</span><select id="preference"><option value="">未评分</option><option>1分</option><option>2分</option><option>3分</option><option>4分</option><option>5分</option></select></label>
             <label class="applied-only"><span>是否收到面试</span><select id="receivedInterview"><option value="false">否</option><option value="true">是</option></select></label>
