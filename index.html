@@ -3,28 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#12213f" />
+  <meta name="theme-color" content="#7c3aed" />
   <title>熊心悦的秋招台账</title>
   <meta name="description" content="个人秋招投递、进度与面试准备台账" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <section class="cover" id="cover" aria-label="秋招台账封面">
+    <div class="cover-grid"></div>
+    <div class="cover-orb orb-one"></div>
+    <div class="cover-orb orb-two"></div>
+    <div class="cover-orb orb-three"></div>
+    <div class="cover-panel">
+      <span class="cover-mark">熊</span>
+      <p>2027 CAMPUS RECRUITMENT</p>
+      <h1>秋招投递台账</h1>
+      <div class="cover-line"></div>
+      <button class="cover-cta" id="enterTracker" type="button">进入台账 <span aria-hidden="true">→</span></button>
+    </div>
+  </section>
+
   <div class="shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand"><span>熊</span><div><b>秋招台账</b><small>2027 CAMPUS</small></div></div>
       <nav id="nav">
-        <button class="active" data-page="dashboard">▦ <span>求职看板</span></button>
-        <button data-page="applied">▣ <span>投递记录</span></button>
-        <button data-page="wishlist">♡ <span>待投递</span></button>
-        <button data-page="prep">▤ <span>面试准备</span></button>
+        <button class="active" data-page="dashboard"><i>01</i><span>求职看板</span></button>
+        <button data-page="applied"><i>02</i><span>投递记录</span></button>
+        <button data-page="wishlist"><i>03</i><span>待投递</span></button>
+        <button data-page="prep"><i>04</i><span>面试准备</span></button>
       </nav>
-      <div class="side-note"><b>本地保存</b><p>新增和修改内容保存在当前浏览器，建议定期导出备份。</p></div>
     </aside>
 
     <main>
       <header class="topbar">
         <button class="menu-button" id="menuButton" aria-label="打开菜单">☰</button>
-        <div><h1 id="pageTitle">求职看板</h1><p id="pageSubtitle">今天也把秋招往前推进一点点。</p></div>
+        <div><h1 id="pageTitle">求职看板</h1></div>
         <div class="profile"><span>熊</span><div><b>熊心悦</b><small>个人秋招空间</small></div></div>
       </header>
       <div id="notice" class="notice" hidden></div>
@@ -33,36 +46,35 @@
   </div>
 
   <nav class="bottom-nav" id="bottomNav">
-    <button class="active" data-page="dashboard">▦<span>看板</span></button>
-    <button data-page="applied">▣<span>投递</span></button>
-    <button data-page="wishlist">♡<span>待投</span></button>
-    <button data-page="prep">▤<span>准备</span></button>
+    <button class="active" data-page="dashboard"><i>01</i><span>看板</span></button>
+    <button data-page="applied"><i>02</i><span>投递</span></button>
+    <button data-page="wishlist"><i>03</i><span>待投</span></button>
+    <button data-page="prep"><i>04</i><span>准备</span></button>
   </nav>
 
   <div class="modal" id="jobModal" hidden>
     <button class="backdrop" data-close="jobModal" aria-label="关闭"></button>
-    <section class="drawer" role="dialog" aria-modal="true">
-      <header><div><small>JOB RECORD</small><h2 id="jobModalTitle">新增投递</h2></div><button class="icon" data-close="jobModal">×</button></header>
+    <section class="drawer" role="dialog" aria-modal="true" aria-labelledby="jobModalTitle">
+      <header><div><small id="jobModalKicker">JOB RECORD</small><h2 id="jobModalTitle">新增投递</h2></div><button class="icon" data-close="jobModal" aria-label="关闭">×</button></header>
       <form id="jobForm">
         <div class="form-scroll">
           <input type="hidden" id="jobId" />
-          <div class="switch"><button type="button" data-bucket="applied" class="active">投递记录</button><button type="button" data-bucket="wishlist">待投递</button></div>
           <div class="form-grid">
             <label><span>公司名称 <b>*</b></span><input id="company" required placeholder="例如：华为" /></label>
             <label><span>岗位名称</span><input id="role" placeholder="例如：产品经理" /></label>
-            <label><span>工作地点</span><input id="city" placeholder="城市或办公地" /></label>
             <label><span>公司性质</span><input id="companyType" placeholder="国企 / 民企 / 外企" /></label>
-            <label id="applicationDateField"><span>投递日期</span><input id="applicationDate" type="date" /></label>
-            <label><span>当前进度</span><select id="status"></select></label>
-            <label id="assessmentField" hidden><span>测评截止日期 <b>*</b></span><input id="assessmentDeadline" type="date" /><small>当前进度为“测评”时必填</small></label>
-            <label><span>投递渠道</span><input id="channel" placeholder="官网 / 内推 / 招聘平台" /></label>
-            <label><span>岗位期望值</span><select id="preference"><option value="">未评分</option><option>1分</option><option>2分</option><option>3分</option><option>4分</option><option>5分</option></select></label>
-            <label><span>是否收到面试</span><select id="receivedInterview"><option value="false">否</option><option value="true">是</option></select></label>
-            <label class="wide"><span>岗位链接</span><input id="jobUrl" type="url" placeholder="https://…" /></label>
-            <label class="wide"><span>岗位要求 / JD</span><textarea id="description" rows="4"></textarea></label>
-            <label class="wide"><span>网上面试信息</span><textarea id="interviewInfo" rows="4"></textarea></label>
-            <label class="wide"><span>投递规则</span><textarea id="applicationRule" rows="2"></textarea></label>
-            <label class="wide"><span>我的经历匹配</span><textarea id="experienceSummary" rows="3"></textarea></label>
+            <label class="applied-only"><span>工作地点</span><input id="city" placeholder="城市或办公地" /></label>
+            <label class="applied-only" id="applicationDateField"><span>投递日期</span><input id="applicationDate" type="date" /></label>
+            <label class="applied-only"><span>当前进度</span><select id="status"></select></label>
+            <label class="applied-only" id="assessmentField" hidden><span id="deadlineLabel">节点时间 <b>*</b></span><input id="assessmentDeadline" type="datetime-local" /><small id="deadlineHint">当前进度需要填写对应时间</small></label>
+            <label class="applied-only"><span>投递渠道</span><input id="channel" placeholder="官网 / 内推 / 招聘平台" /></label>
+            <label class="applied-only"><span>岗位期望值</span><select id="preference"><option value="">未评分</option><option>1分</option><option>2分</option><option>3分</option><option>4分</option><option>5分</option></select></label>
+            <label class="applied-only"><span>是否收到面试</span><select id="receivedInterview"><option value="false">否</option><option value="true">是</option></select></label>
+            <label class="wide applied-only"><span>岗位链接</span><input id="jobUrl" type="url" placeholder="https://…" /></label>
+            <label class="wide applied-only"><span>岗位要求 / JD</span><textarea id="description" rows="4"></textarea></label>
+            <label class="wide applied-only"><span>网上面试信息</span><textarea id="interviewInfo" rows="4"></textarea></label>
+            <label class="wide applied-only"><span>投递规则</span><textarea id="applicationRule" rows="2"></textarea></label>
+            <label class="wide applied-only"><span>我的经历匹配</span><textarea id="experienceSummary" rows="3"></textarea></label>
           </div>
         </div>
         <footer><button type="button" class="secondary" data-close="jobModal">取消</button><button class="primary" type="submit">保存记录</button></footer>
@@ -73,7 +85,7 @@
   <div class="modal centered" id="prepModal" hidden>
     <button class="backdrop" data-close="prepModal" aria-label="关闭"></button>
     <section class="dialog" role="dialog" aria-modal="true">
-      <header><div><small>INTERVIEW PREP</small><h2>编辑面试素材</h2></div><button class="icon" data-close="prepModal">×</button></header>
+      <header><div><small>INTERVIEW PREP</small><h2>编辑面试素材</h2></div><button class="icon" data-close="prepModal" aria-label="关闭">×</button></header>
       <form id="prepForm">
         <div class="form-scroll single">
           <input type="hidden" id="prepId" />
