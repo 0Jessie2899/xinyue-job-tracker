@@ -30,6 +30,7 @@
         <button data-page="applied"><i>02</i><span>投递记录</span></button>
         <button data-page="wishlist"><i>03</i><span>待投递</span></button>
         <button data-page="prep"><i>04</i><span>面试准备</span></button>
+        <button data-page="aiconfig"><i>05</i><span>AI 配置</span></button>
       </nav>
     </aside>
 
@@ -49,6 +50,7 @@
     <button data-page="applied"><i>02</i><span>投递</span></button>
     <button data-page="wishlist"><i>03</i><span>待投</span></button>
     <button data-page="prep"><i>04</i><span>准备</span></button>
+    <button data-page="aiconfig"><i>05</i><span>配置</span></button>
   </nav>
 
   <div class="modal" id="jobModal" hidden>
@@ -66,6 +68,9 @@
             <label class="applied-only"><span>投递日期</span><input id="applicationDate" type="date" /></label>
             <label class="applied-only"><span>当前进度</span><select id="status"></select></label>
             <label class="applied-only" id="deadlineField" hidden><span id="deadlineLabel">节点时间 <b>*</b></span><input id="assessmentDeadline" type="datetime-local" /><small id="deadlineHint">当前进度需要填写对应时间</small></label>
+            <label class="wide applied-only" id="failReasonField" hidden><span>挂掉 / 终止原因 <b>*</b></span><input id="failReason" placeholder="例如：简历未通过初筛、岗位已招满、主动放弃" /><small>记录原因便于后续复盘</small></label>
+            <label class="applied-only" id="nextStageField" hidden><span>下一节点</span><select id="nextStage"></select><small>保存后自动推进到该状态</small></label>
+            <label class="applied-only" id="nextStageTimeField" hidden><span>下一节点时间 <b>*</b></span><input id="nextStageTime" type="datetime-local" /><small id="nextStageTimeHint"></small></label>
             <label class="applied-only"><span>投递渠道</span><input id="channel" placeholder="官网 / 内推 / 招聘平台" /></label>
             <label class="applied-only"><span>岗位期望值</span><select id="preference"><option value="">未评分</option><option>1分</option><option>2分</option><option>3分</option><option>4分</option><option>5分</option></select></label>
             <label class="applied-only"><span>是否收到面试</span><select id="receivedInterview"><option value="false">否</option><option value="true">是</option></select></label>
@@ -90,9 +95,26 @@
           <input type="hidden" id="prepId" />
           <label><span>分类</span><select id="prepCategory"><option value="experience">经历打磨</option><option value="question">常见问题</option><option value="self_intro">自我介绍</option></select></label>
           <label><span>标题 <b>*</b></span><input id="prepTitle" required /></label>
-          <label><span>内容</span><textarea id="prepContent" rows="11"></textarea></label>
+          <label class="prep-content"><span>内容</span><textarea id="prepContent" rows="11" placeholder="填写素材内容，或点右下角猫咪图标让 AI 帮你生成"></textarea><button type="button" class="cat-btn" id="prepCatBtn" title="AI 智能生成（炸弹来帮忙）" aria-label="AI 智能生成"><img src="./assets/cat-zhadan.png" srcset="./assets/cat-zhadan@2x.png 2x" alt="" /></button></label>
         </div>
         <footer><button type="button" class="secondary" data-close="prepModal">取消</button><button class="primary" type="submit">保存素材</button></footer>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal centered" id="aiGenModal" hidden>
+    <button class="backdrop" data-close="aiGenModal" aria-label="关闭"></button>
+    <section class="dialog" role="dialog" aria-modal="true">
+      <header><div><small>AI ASSISTANT</small><h2>AI 智能生成</h2></div><button class="icon" data-close="aiGenModal" aria-label="关闭">×</button></header>
+      <form id="aiGenForm">
+        <div class="form-scroll single">
+          <label><span>描述你想要的素材</span><textarea id="aiDesc" rows="4" placeholder="例如：帮我把一段校园项目经历，按 STAR 法打磨成 90 秒面试口述稿"></textarea></label>
+          <label><span>关联岗位（可选，自动带入 JD）</span><select id="aiGenJob"><option value="">不关联</option></select></label>
+          <div class="ai-actions"><button class="primary" id="aiGenGenerate" type="button">生成素材</button><button class="secondary" id="aiGenCopy" type="button">复制结果</button></div>
+          <label><span>生成结果</span><textarea id="aiGenResult" rows="9" placeholder="结果会出现在这里，可编辑后应用到素材"></textarea></label>
+          <div class="ai-actions"><button class="primary" id="aiGenSave" type="button">应用到当前素材</button><button class="secondary" id="aiGenCopy2" type="button">复制结果</button></div>
+          <p class="ai-note">未配置 Key 时，点击「生成素材」会复制提示词，粘贴到 ChatGPT / 豆包即可。</p>
+        </div>
       </form>
     </section>
   </div>
