@@ -114,3 +114,12 @@ button.help-toggle{display:inline-flex;align-items:center;justify-content:center
 button.help-toggle:hover,button.help-toggle[aria-expanded="true"]{background:#eee5f6;border-color:#76558f;color:#543269}
 button.help-toggle:focus-visible{outline:2px solid #76558f;outline-offset:3px}
 .prep-title{display:flex;align-items:center;gap:0}
+
+/* Purple sliding disclosure switch */
+button.detail-switch{display:inline-flex;align-items:center;position:relative;box-sizing:border-box;width:40px;height:24px;min-width:40px;padding:3px;margin-left:9px;flex-shrink:0;border:2px solid #8a68a7;border-radius:999px;background:#faf7fd;vertical-align:middle;cursor:pointer;transition:background-color .22s,border-color .22s}
+button.detail-switch .switch-thumb{display:block;width:14px;height:14px;min-width:14px;margin:0;border:0;border-radius:50%;background:#8a68a7;transform:translateX(0);transition:transform .22s ease,background-color .22s}
+button.detail-switch[aria-expanded="true"]{background:#8a68a7;border-color:#8a68a7}
+button.detail-switch[aria-expanded="true"] .switch-thumb{transform:translateX(16px);background:#fff}
+button.detail-switch:hover{box-shadow:0 0 0 3px #8a68a71a}
+button.detail-switch:focus-visible{outline:2px solid #76558f;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){button.detail-switch,button.detail-switch .switch-thumb{transition:none}}

@@ -176,7 +176,7 @@ function jobDetailHtml(j) {
   return `<div class="job-detail"><dl class="detail-grid">${cells.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>${blocks.map(([k, v]) => `<div class="detail-block"><h5>${esc(k)}</h5><p>${esc(v).replaceAll("\n", "<br>")}</p></div>`).join("")}${history}${link}</div>`;
 }
 function jobTable(jobs, compact = false) {
-  const toggle = (j) => `<button class="detail-toggle help-toggle" data-toggle-job="${j.id}" aria-expanded="${state.expanded.has(j.id)}" title="查看详情" aria-label="查看 ${esc(j.company)} 的完整信息"><span aria-hidden="true">?</span></button>`;
+  const toggle = (j) => `<button class="detail-toggle detail-switch" data-toggle-job="${j.id}" aria-expanded="${state.expanded.has(j.id)}" title="展开或收起详情" aria-label="展开或收起 ${esc(j.company)} 的完整信息"><span class="switch-thumb" aria-hidden="true"></span></button>`;
   const actions = (j) => `<div class="actions"><button class="action-btn" data-edit-job="${j.id}">Edit</button>${compact ? "" : `<button class="action-btn delete" data-delete-job="${j.id}">Delete</button>`}</div>`;
   const rows = jobs.map((j) => { const detail = jobDetailHtml(j); return `<tr><td>${dateText(j.applicationDate)}</td><td><div class="company"><b>${esc(j.company)}${toggle(j)}</b><span>${esc(j.role || "岗位待补充")}</span></div></td><td>${esc(j.city || "—")}</td><td>${pill(j.status)}</td><td>${nodeTime(j)}</td><td>${esc(j.preference || "—")}</td><td>${actions(j)}</td></tr><tr class="detail-row" ${state.expanded.has(j.id) ? "" : "hidden"}><td colspan="7">${detail}</td></tr>`; }).join("");
   const mobile = jobs.map((j) => { const detail = jobDetailHtml(j); return `<article class="mobile-card"><div>${pill(j.status)}<small>${dateText(j.applicationDate)}</small></div><h4>${esc(j.company)}${toggle(j)}</h4><p>${esc(j.role || "岗位待补充")}</p><div class="job-detail" ${state.expanded.has(j.id) ? "" : "hidden"}>${detail}</div>${actions(j)}</article>`; }).join("");
@@ -202,9 +202,27 @@ function renderPrep() {
   const tabs = `<div class="tabs">${categories.map(([k, l]) => `<button class="${k === state.prepCategory ? "active" : ""}" data-prep-category="${k}">${l}<span>${state.prep.filter((i) => i.category === k).length}</span></button>`).join("")}</div>`;
   const list = current.length ? `<div class="prep-list">${current.map((i, n) => {
     const open = state.prepExpanded.has(i.id);
-    return `<article class="prep"><span>${String(n + 1).padStart(2, "0")}</span><div class="prep-copy"><h3 class="prep-title">${esc(i.title)}<button class="help-toggle" data-toggle-prep="${i.id}" aria-expanded="${open}" title="${open ? "收起内容" : "查看详情"}" aria-label="${open ? "收起" : "查看"}${esc(i.title)}的完整内容"><span aria-hidden="true">?</span></button></h3><p class="prep-text${open ? " expanded" : ""}">${esc(i.content || "还没有填写内容。")}</p></div><div class="actions"><button class="action-btn" data-copy-prep="${i.id}" title="只复制素材正文">Copy</button><button class="action-btn" data-edit-prep="${i.id}">Edit</button><button class="action-btn delete" data-delete-prep="${i.id}">Delete</button></div></article>`;
+    return `<article class="prep"><span>${String(n + 1).padStart(2, "0")}</span><div class="prep-copy"><h3 class="prep-title">${esc(i.title)}<button class="detail-switch" data-toggle-prep="${i.id}" aria-expanded="${open}" title="${open ? "收起内容" : "查看详情"}" aria-label="${open ? "收起" : "查看"}${esc(i.title)}的完整内容"><span class="switch-thumb" aria-hidden="true"></span></button></h3><p class="prep-text${open ? " expanded" : ""}">${esc(i.content || "还没有填写内容。")}</p></div><div class="actions"><button class="action-btn" data-copy-prep="${i.id}" title="只复制素材正文">Copy</button><button class="action-btn" data-edit-prep="${i.id}">Edit</button><button class="action-btn delete" data-delete-prep="${i.id}">Delete</button></div></article>`;
   }).join("")}</div>` : empty("这里还没有素材", "记录一个面试问题或准备一版自我介绍。");
   $("app").innerHTML = card("面试素材库", "经历故事、常见问题和自我介绍", tabs + list, `<button class="primary" data-add-prep>＋ 新增素材</button>`) + backupBar();
+}
+
+
+function updateDetailSwitches(kind, id, open) {
+  document.querySelectorAll(`[data-toggle-${kind}="${id}"]`).forEach(button => {
+    button.setAttribute("aria-expanded", String(open));
+    button.title = open ? "收起详情" : "展开详情";
+    if (kind === "job") {
+      const row = button.closest("tr");
+      if (row?.nextElementSibling?.classList.contains("detail-row")) row.nextElementSibling.hidden = !open;
+      const mobile = button.closest(".mobile-card");
+      if (mobile) mobile.querySelector(".job-detail").hidden = !open;
+    } else {
+      const article = button.closest(".prep");
+      article.querySelector(".prep-text").classList.toggle("expanded", open);
+      button.setAttribute("aria-label", (open ? "收起" : "查看") + "素材完整内容");
+    }
+  });
 }
 
 function emptyJob(bucket) { const base = Object.fromEntries(JOB_FIELDS.map((f) => [f, f === "receivedInterview" ? false : ""])); return { id: "", bucket, ...base, status: bucket === "applied" ? "已投递" : "待投递", applicationDate: bucket === "applied" ? new Date().toISOString().slice(0, 10) : "", stageHistory: [] }; }
@@ -345,14 +363,14 @@ document.addEventListener("click", (e) => {
   if (b.dataset.range) { state.range = b.dataset.range; animKey = ""; render(); }
   if (b.dataset.go) { state.page = b.dataset.go; render(); }
   if (b.dataset.addJob) openJob(emptyJob(b.dataset.addJob));
-  if (b.dataset.toggleJob) { const id = Number(b.dataset.toggleJob); state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); render(); }
+  if (b.dataset.toggleJob) { const id = Number(b.dataset.toggleJob); state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); updateDetailSwitches("job", id, state.expanded.has(id)); }
   if (b.dataset.editJob) { const j = state.jobs.find((x) => x.id === Number(b.dataset.editJob)); if (j) openJob(j); }
   if (b.dataset.deleteJob) { const id = Number(b.dataset.deleteJob), j = state.jobs.find((x) => x.id === id); if (j && confirm(`确认删除“${j.company}”吗？`)) { state.jobs = state.jobs.filter((x) => x.id !== id); save(); render(); notify("岗位记录已删除"); } }
   if (b.dataset.convert) { const j = state.jobs.find((x) => x.id === Number(b.dataset.convert)); if (j) { j.bucket = "applied"; j.status = "已投递"; j.applicationDate = new Date().toISOString().slice(0, 10); save(); render(); notify("已转入投递记录"); } }
   if (b.dataset.close) closeModal(b.dataset.close);
   if (b.dataset.prepCategory) { state.prepCategory = b.dataset.prepCategory; render(); }
   if (b.hasAttribute("data-add-prep")) openPrep();
-  if (b.dataset.togglePrep) { const id = Number(b.dataset.togglePrep); state.prepExpanded.has(id) ? state.prepExpanded.delete(id) : state.prepExpanded.add(id); render(); }
+  if (b.dataset.togglePrep) { const id = Number(b.dataset.togglePrep); state.prepExpanded.has(id) ? state.prepExpanded.delete(id) : state.prepExpanded.add(id); updateDetailSwitches("prep", id, state.prepExpanded.has(id)); }
   if (b.dataset.copyPrep) { const i = state.prep.find((x) => x.id === Number(b.dataset.copyPrep)); if (i) copyPrepContent(i); }
   if (b.dataset.editPrep) { const i = state.prep.find((x) => x.id === Number(b.dataset.editPrep)); if (i) openPrep(i); }
   if (b.dataset.deletePrep) { const id = Number(b.dataset.deletePrep), i = state.prep.find((x) => x.id === id); if (i && confirm(`确认删除“${i.title}”吗？`)) { state.prep = state.prep.filter((x) => x.id !== id); save(); render(); notify("面试素材已删除"); } }
