@@ -108,3 +108,9 @@ button[disabled]{opacity:.55;cursor:not-allowed;transform:none!important;box-sha
 .industry-track i{display:block;height:100%;background:linear-gradient(90deg,#baa0d7,#78529c);border-radius:10px}
 .action-btn.detail-toggle{width:auto;height:auto;min-width:52px;border-radius:10px;padding:7px 11px;font-size:12px;vertical-align:middle;margin-left:8px}
 @media(max-width:650px){.industry-chart{grid-template-columns:1fr}.industry-label{font-size:13px}}
+
+/* Compact question-mark detail controls beside names and titles */
+button.help-toggle{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;min-width:23px;padding:0;margin-left:8px;border:1.5px solid #9582ad;border-radius:50%;background:rgba(255,255,255,.75);color:#76558f;font:600 14px/1 system-ui;vertical-align:middle;cursor:pointer;flex-shrink:0}
+button.help-toggle:hover,button.help-toggle[aria-expanded="true"]{background:#eee5f6;border-color:#76558f;color:#543269}
+button.help-toggle:focus-visible{outline:2px solid #76558f;outline-offset:3px}
+.prep-title{display:flex;align-items:center;gap:0}
