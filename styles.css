@@ -98,3 +98,13 @@ button[disabled]{opacity:.55;cursor:not-allowed;transform:none!important;box-sha
 .ai-config input,.ai-config select{width:100%;padding:11px 12px;border:1px solid rgba(83,52,99,.18);border-radius:11px;color:var(--ink);background:rgba(255,255,255,.92);font-size:13px}
 .ai-config input:focus,.ai-config select:focus{border-color:rgba(118,80,160,.54);box-shadow:0 0 0 3px rgba(118,80,160,.08)}
 .ai-config .ai-actions{margin-top:2px}
+
+/* Industry overview and clearer detail actions */
+.industry-chart{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 36px;padding:8px 0 12px}
+.industry-label{display:flex;justify-content:space-between;gap:16px;font-size:14px;margin-bottom:9px;color:#493552}
+.industry-label strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+.industry-label small{font-weight:400;color:#80718c}
+.industry-track{height:9px;background:#eee8f4;border-radius:10px;overflow:hidden}
+.industry-track i{display:block;height:100%;background:linear-gradient(90deg,#baa0d7,#78529c);border-radius:10px}
+.action-btn.detail-toggle{width:auto;height:auto;min-width:52px;border-radius:10px;padding:7px 11px;font-size:12px;vertical-align:middle;margin-left:8px}
+@media(max-width:650px){.industry-chart{grid-template-columns:1fr}.industry-label{font-size:13px}}

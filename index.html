@@ -62,16 +62,17 @@
           <input type="hidden" id="jobId" />
           <div class="form-grid">
             <label><span>公司名称 <b>*</b></span><input id="company" required placeholder="例如：华为" /></label>
-            <label><span>岗位名称</span><input id="role" placeholder="例如：产品经理" /></label>
-            <label><span>公司性质</span><input id="companyType" placeholder="国企 / 民企 / 外企" /></label>
-            <label class="applied-only"><span>工作地点</span><input id="city" placeholder="城市或办公地" /></label>
+            <label><span>岗位名称</span><input list="roleOptions" id="role" placeholder="例如：产品经理" /></label>
+            <label><span>公司性质</span><select id="companyType"><option value="">请选择</option><option>民企</option><option>国企</option><option>央企</option><option>外企</option><option>合资企业</option><option>事业单位</option><option>社会组织</option><option>其他</option></select></label>
+            <label class="applied-only"><span>公司行业</span><select id="industry"><option value="">请选择</option><option>互联网 / 软件服务</option><option>人工智能</option><option>电子 / 半导体</option><option>通信</option><option>汽车 / 新能源汽车</option><option>制造业 / 工业设备</option><option>能源 / 电力</option><option>金融</option><option>物流 / 供应链</option><option>零售 / 电商</option><option>快消 / 食品饮料</option><option>农林牧渔</option><option>医药 / 医疗健康</option><option>房地产 / 商业管理</option><option>咨询 / 专业服务</option><option>教育 / 培训</option><option>文化 / 传媒 / 娱乐</option><option>旅游 / 酒店</option><option>公共服务</option><option>综合集团</option><option>其他</option></select></label>
+          <label class="applied-only"><span>工作地点</span><input list="cityOptions" id="city" placeholder="城市或办公地" /></label>
             <label class="applied-only"><span>投递日期</span><input id="applicationDate" type="date" /></label>
             <label class="applied-only"><span>当前进度</span><select id="status"></select></label>
             <label class="applied-only" id="deadlineField" hidden><span id="deadlineLabel">节点时间 <b>*</b></span><input id="assessmentDeadline" type="datetime-local" /><small id="deadlineHint">当前进度需要填写对应时间</small></label>
             <label class="wide applied-only" id="failReasonField" hidden><span>挂掉 / 终止原因 <b>*</b></span><input id="failReason" placeholder="例如：简历未通过初筛、岗位已招满、主动放弃" /><small>记录原因便于后续复盘</small></label>
             <label class="applied-only" id="nextStageField" hidden><span>下一节点</span><select id="nextStage"></select><small>保存后自动推进到该状态</small></label>
             <label class="applied-only" id="nextStageTimeField" hidden><span>下一节点时间 <b>*</b></span><input id="nextStageTime" type="datetime-local" /><small id="nextStageTimeHint"></small></label>
-            <label class="applied-only"><span>投递渠道</span><input id="channel" placeholder="官网 / 内推 / 招聘平台" /></label>
+            <label class="applied-only"><span>投递渠道</span><select id="channel"><option value="">请选择</option><option>公司官网</option><option>内推</option><option>BOSS直聘</option><option>智联招聘</option><option>前程无忧</option><option>猎聘</option><option>牛客</option><option>应届生求职网</option><option>学校就业网</option><option>校招宣讲会</option><option>校园双选会</option><option>其他</option></select></label>
             <label class="applied-only"><span>岗位期望值</span><select id="preference"><option value="">未评分</option><option>1分</option><option>2分</option><option>3分</option><option>4分</option><option>5分</option></select></label>
             <label class="applied-only"><span>是否收到面试</span><select id="receivedInterview"><option value="false">否</option><option value="true">是</option></select></label>
             <label class="wide applied-only"><span>岗位链接</span><input id="jobUrl" type="url" placeholder="https://…" /></label>
@@ -120,5 +121,7 @@
   </div>
 
   <script src="./app.js"></script>
+<datalist id="cityOptions"><option value="北京"></option><option value="上海"></option><option value="广州"></option><option value="深圳"></option><option value="成都"></option><option value="杭州"></option><option value="南京"></option><option value="武汉"></option><option value="苏州"></option><option value="西安"></option><option value="重庆"></option><option value="天津"></option><option value="长沙"></option><option value="郑州"></option><option value="合肥"></option><option value="厦门"></option><option value="青岛"></option><option value="全国"></option><option value="远程"></option></datalist>
+<datalist id="roleOptions"><option value="管培生"></option><option value="产品经理"></option><option value="产品运营"></option><option value="用户运营"></option><option value="市场营销"></option><option value="品牌管理"></option><option value="商务拓展"></option><option value="销售"></option><option value="售前顾问"></option><option value="项目管理"></option><option value="战略规划"></option><option value="行业研究"></option><option value="数据分析"></option><option value="供应链管理"></option><option value="采购"></option><option value="人力资源"></option><option value="财务管理"></option><option value="综合管理"></option></datalist>
 </body>
 </html>

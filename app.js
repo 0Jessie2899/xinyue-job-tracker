@@ -21,7 +21,7 @@ const NEXT_STAGE = {
   "待终面": ["终面通过"], "终面通过": ["待HR面", "已录用"],
   "待HR面": ["HR面通过"], "HR面通过": ["已录用"]
 };
-const JOB_FIELDS = ["company", "role", "companyType", "city", "applicationDate", "status", "assessmentDeadline", "nextStage", "nextStageTime", "failReason", "channel", "preference", "receivedInterview", "jobUrl", "description", "interviewInfo", "applicationRule", "experienceSummary"];
+const JOB_FIELDS = ["company", "role", "companyType", "industry", "city", "applicationDate", "status", "assessmentDeadline", "nextStage", "nextStageTime", "failReason", "channel", "preference", "receivedInterview", "jobUrl", "description", "interviewInfo", "applicationRule", "experienceSummary"];
 const FIELD_RULES = [
   { when: (v) => DEADLINE_LABELS[v.status], require: ["assessmentDeadline"], msg: "当前进度需要填写节点时间" },
   { when: (v) => v.receivedInterview, require: ["interviewInfo"], msg: "已标记「收到面试」，请填写网上面试信息" },
@@ -126,6 +126,21 @@ function playDashboardAnimations() {
   requestAnimationFrame(() => document.querySelectorAll("#app .track i[data-width]").forEach((el) => { el.style.width = el.dataset.width; }));
 }
 
+
+function industryDistribution(jobs) {
+  const counts = new Map();
+  jobs.forEach(j => { const name = String(j.industry || "").trim() || "未分类"; counts.set(name, (counts.get(name) || 0) + 1); });
+  return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh"));
+}
+function industryChart(jobs) {
+  const rows = industryDistribution(jobs), total = jobs.length;
+  if (!total) return '<div class="empty compact"><p>添加投递并选择公司行业后，在这里查看分布。</p></div>';
+  return '<div class="industry-chart">' + rows.map(([name, count]) => {
+    const percent = count / total * 100;
+    return `<div class="industry-row"><div class="industry-label"><span>${esc(name)}</span><strong>${count} 个 <small>· ${percent.toFixed(1)}%</small></strong></div><div class="industry-track"><i style="width:${percent}%"></i></div></div>`;
+  }).join("") + '</div>';
+}
+
 function renderDashboard() {
   const key = `dash|${state.range}`;
   const animate = !reducedMotion() && animKey !== key;
@@ -147,20 +162,21 @@ function renderDashboard() {
   $("app").innerHTML = `<section class="dashboard-head rise" style="--i:0"><div><span>已投递 <b>${applied.length}</b></span><span>待投递 <b>${wishlist.length}</b></span></div>${rangeTabs}<button class="primary" data-add-job="applied">＋ 添加投递</button></section>
   <section class="stats">${stat("01", "累计投递", applied.length, "实际投递岗位", animate ? 1 : -1)}${stat("02", "待测评", assessment, "关注截止时间", animate ? 2 : -1)}${stat("03", "进入面试", interview, "含待面试记录", animate ? 3 : -1)}${stat("04", "高期望岗位", high, "优先准备跟进", animate ? 4 : -1)}${stat("05", "流程结束", ended, "挂 / 流程终止", animate ? 5 : -1)}${stat("06", "待投递池", wishlist.length, "下一批目标", animate ? 6 : -1)}</section>
   <section class="grid-2">${card("流程分布", "按当前进度实时更新", `<div class="progress-list">${progress}</div>`, "", animate ? 7 : -1)}${card("近期事项", "按节点时间由近到远排列", `<div class="todo-list">${todos}</div>`, "", animate ? 8 : -1)}</section>
+  ${card("行业投递分布", "按当前时间范围内的投递岗位统计，按数量降序；不含待投递。未填写行业的记录计入未分类。", industryChart(applied))}
   ${card("最近投递", "最近更新的岗位记录", jobTable(recent, true), `<button class="text" data-go="applied">管理记录 ›</button>`, animate ? 9 : -1)}${backupBar()}`;
   if (animate) playDashboardAnimations();
 }
 function backupBar() { return `<div class="backup-bar"><button class="secondary" id="exportData">导出数据备份</button><button class="secondary" id="importData">导入备份</button><button class="secondary" id="resetData">清空所有数据</button></div>`; }
 function nodeTime(job) { if (!DEADLINE_LABELS[job.status]) return "—"; const m = deadlineMeta(job.assessmentDeadline); return `<div class="deadline-cell ${m.cls}"><b>${job.assessmentDeadline ? dateText(job.assessmentDeadline) : "待填写"}</b><small>${m.label}</small></div>`; }
 function jobDetailHtml(j) {
-  const cells = [["公司性质", j.companyType], ["工作城市", j.city], ["投递渠道", j.channel], ["岗位期望值", j.preference], ["是否收到面试", j.receivedInterview ? "是" : "否"], ["投递日期", dateText(j.applicationDate)], ["挂掉 / 终止原因", j.failReason]].filter(([, v]) => v);
+  const cells = [["公司性质", j.companyType], ["公司行业", j.industry || "未分类"], ["工作城市", j.city], ["投递渠道", j.channel], ["岗位期望值", j.preference], ["是否收到面试", j.receivedInterview ? "是" : "否"], ["投递日期", dateText(j.applicationDate)], ["挂掉 / 终止原因", j.failReason]].filter(([, v]) => v);
   const blocks = [["岗位要求 / JD", j.description], ["网上面试信息", j.interviewInfo], ["投递规则", j.applicationRule], ["我的经历匹配", j.experienceSummary]].filter(([, v]) => v);
   const history = (j.stageHistory || []).length ? `<div class="detail-block"><h5>节点记录</h5><ol class="detail-history">${[...j.stageHistory].reverse().map((h) => `<li><b>${esc(h.status)}</b><span>${esc(dateText(h.time))}</span></li>`).join("")}</ol></div>` : "";
   const link = j.jobUrl ? `<a class="detail-link" href="${esc(j.jobUrl)}" target="_blank" rel="noopener noreferrer">打开岗位链接 ↗</a>` : "";
   return `<div class="job-detail"><dl class="detail-grid">${cells.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>${blocks.map(([k, v]) => `<div class="detail-block"><h5>${esc(k)}</h5><p>${esc(v).replaceAll("\n", "<br>")}</p></div>`).join("")}${history}${link}</div>`;
 }
 function jobTable(jobs, compact = false) {
-  const toggle = (j) => `<button class="detail-toggle" data-toggle-job="${j.id}" aria-expanded="${state.expanded.has(j.id)}" title="查看详情" aria-label="查看 ${esc(j.company)} 的完整信息">ⓘ</button>`;
+  const toggle = (j) => `<button class="action-btn detail-toggle" data-toggle-job="${j.id}" aria-expanded="${state.expanded.has(j.id)}" title="查看详情" aria-label="查看 ${esc(j.company)} 的完整信息">View</button>`;
   const actions = (j) => `<div class="actions"><button class="action-btn" data-edit-job="${j.id}">Edit</button>${compact ? "" : `<button class="action-btn delete" data-delete-job="${j.id}">Delete</button>`}</div>`;
   const rows = jobs.map((j) => { const detail = jobDetailHtml(j); return `<tr><td>${dateText(j.applicationDate)}</td><td><div class="company"><b>${esc(j.company)}${toggle(j)}</b><span>${esc(j.role || "岗位待补充")}</span></div></td><td>${esc(j.city || "—")}</td><td>${pill(j.status)}</td><td>${nodeTime(j)}</td><td>${esc(j.preference || "—")}</td><td>${actions(j)}</td></tr><tr class="detail-row" ${state.expanded.has(j.id) ? "" : "hidden"}><td colspan="7">${detail}</td></tr>`; }).join("");
   const mobile = jobs.map((j) => { const detail = jobDetailHtml(j); return `<article class="mobile-card"><div>${pill(j.status)}<small>${dateText(j.applicationDate)}</small></div><h4>${esc(j.company)}${toggle(j)}</h4><p>${esc(j.role || "岗位待补充")}</p><div class="job-detail" ${state.expanded.has(j.id) ? "" : "hidden"}>${detail}</div>${actions(j)}</article>`; }).join("");
@@ -169,9 +185,9 @@ function jobTable(jobs, compact = false) {
 
 function renderApplied() {
   const all = state.jobs.filter((j) => j.bucket === "applied"), q = state.search.toLowerCase().trim();
-  const jobs = all.filter((j) => (!q || [j.company, j.role, j.city].some((v) => v?.toLowerCase().includes(q))) && (state.filter === "全部状态" || j.status === state.filter));
+  const jobs = all.filter((j) => (!q || [j.company, j.role, j.city, j.industry].some((v) => v?.toLowerCase().includes(q))) && (state.filter === "全部状态" || j.status === state.filter));
   const filterOptions = ["全部状态", ...STATUSES];
-  const filters = `<div class="filters"><label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" value="${esc(state.search)}" placeholder="搜索公司、岗位或城市" autocomplete="off" /></label><select id="statusFilter" aria-label="按当前进度筛选">${filterOptions.map((s) => `<option ${s === state.filter ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div>`;
+  const filters = `<div class="filters"><label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" value="${esc(state.search)}" placeholder="搜索公司、岗位、城市或行业" autocomplete="off" /></label><select id="statusFilter" aria-label="按当前进度筛选">${filterOptions.map((s) => `<option ${s === state.filter ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div>`;
   $("app").innerHTML = card(`全部投递 · ${all.length}`, "统计口径只包含已进入投递记录的岗位", `${filters}${jobs.length ? jobTable(jobs) : empty("没有找到匹配记录", "请更换关键词或筛选状态。")}`, `<button class="primary" data-add-job="applied">＋ 新增投递</button>`) + backupBar();
 }
 
@@ -199,7 +215,7 @@ function openJob(job) {
   $("jobModalKicker").textContent = bucket === "wishlist" ? "WISHLIST" : "JOB RECORD";
   $("jobId").value = v.id || "";
   $("status").value = normalizeStatus(v.status, bucket);
-  JOB_FIELDS.forEach((f) => { const el = $(f); if (!el || f === "status" || f === "assessmentDeadline") return; el.value = f === "receivedInterview" ? String(Boolean(v[f])) : (v[f] ?? ""); });
+  JOB_FIELDS.forEach((f) => { const el = $(f); if (!el || f === "status" || f === "assessmentDeadline") return; if (el.tagName === "SELECT" && v[f] && !Array.from(el.options).some(o => o.value === String(v[f]))) el.add(new Option(String(v[f]), String(v[f]))); el.value = f === "receivedInterview" ? String(Boolean(v[f])) : (v[f] ?? ""); });
   $("assessmentDeadline").value = dateTimeInput(v.assessmentDeadline);
   document.querySelectorAll(".applied-only").forEach((el) => { el.hidden = bucket !== "applied"; });
   syncFormRules(); $("jobModal").hidden = false; setTimeout(() => $("company").focus(), 30);
