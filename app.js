@@ -45,7 +45,7 @@ const PROMPTS = {
   question: (c) => `你是资深校招面试官。请针对下面的岗位，列出 8 个高频面试问题。\n每个问题给出：①问题原文 ②一句话说明考察点 ③回答要点（不超过 3 条）。\n\n主题：${c.topic}\n目标岗位：${c.role}\n岗位 JD：${c.jd}\n我的背景材料：${c.raw}\n\n要求：问题要贴合该岗位真实的考察方向，不要泛泛而谈。`,
   self_intro: (c) => `你是资深校招面试官。请为应聘下面岗位写 3 版自我介绍，分别是 60 秒 / 90 秒 / 3 分钟。\n每版包含：开场定位、核心经历（1-2 段）、与岗位匹配的理由、收尾。\n\n主题：${c.topic}\n目标岗位：${c.role}\n岗位 JD：${c.jd}\n我的背景材料：${c.raw}\n\n要求：口语化、可直接朗读；突出与该岗位的匹配点。`
 };
-let state = { jobs: [], prep: [], page: "dashboard", search: "", filter: "全部状态", prepCategory: "experience", nextId: 1, range: "all", expanded: new Set() };
+let state = { jobs: [], prep: [], page: "dashboard", search: "", filter: "全部状态", prepCategory: "experience", nextId: 1, range: "all", expanded: new Set(), prepExpanded: new Set() };
 let composing = false, searchTimer;
 const $ = (id) => document.getElementById(id);
 const trim = (v) => typeof v === "string" && v.trim() ? v.trim() : typeof v === "number" ? String(v) : null;
@@ -184,7 +184,10 @@ function renderPrep() {
   const categories = [["experience", "经历打磨"], ["question", "常见问题"], ["self_intro", "自我介绍"]];
   const current = state.prep.filter((i) => i.category === state.prepCategory);
   const tabs = `<div class="tabs">${categories.map(([k, l]) => `<button class="${k === state.prepCategory ? "active" : ""}" data-prep-category="${k}">${l}<span>${state.prep.filter((i) => i.category === k).length}</span></button>`).join("")}</div>`;
-  const list = current.length ? `<div class="prep-list">${current.map((i, n) => `<article class="prep"><span>${String(n + 1).padStart(2, "0")}</span><div><h3>${esc(i.title)}</h3><p>${esc(i.content || "还没有填写内容。")}</p></div><div class="actions"><button class="action-btn" data-edit-prep="${i.id}">Edit</button><button class="action-btn delete" data-delete-prep="${i.id}">Delete</button></div></article>`).join("")}</div>` : empty("这里还没有素材", "记录一个面试问题或准备一版自我介绍。");
+  const list = current.length ? `<div class="prep-list">${current.map((i, n) => {
+    const open = state.prepExpanded.has(i.id);
+    return `<article class="prep"><span>${String(n + 1).padStart(2, "0")}</span><div class="prep-copy"><h3>${esc(i.title)}</h3><p class="prep-text${open ? " expanded" : ""}">${esc(i.content || "还没有填写内容。")}</p></div><div class="actions"><button class="action-btn" data-toggle-prep="${i.id}" aria-expanded="${open}" aria-label="${open ? "收起" : "查看"}${esc(i.title)}的完整内容">${open ? "Close" : "View"}</button><button class="action-btn" data-copy-prep="${i.id}" title="只复制素材正文">Copy</button><button class="action-btn" data-edit-prep="${i.id}">Edit</button><button class="action-btn delete" data-delete-prep="${i.id}">Delete</button></div></article>`;
+  }).join("")}</div>` : empty("这里还没有素材", "记录一个面试问题或准备一版自我介绍。");
   $("app").innerHTML = card("面试素材库", "经历故事、常见问题和自我介绍", tabs + list, `<button class="primary" data-add-prep>＋ 新增素材</button>`) + backupBar();
 }
 
@@ -246,6 +249,24 @@ async function copyText(text) {
   try { await navigator.clipboard.writeText(text); notify("已复制，粘贴到外部 AI 即可"); return true; }
   catch { const el = $("aiGenResult"); if (el) { el.value = text; el.focus(); el.select(); } notify("已选中内容，请按 ⌘/Ctrl + C 复制"); return false; }
 }
+async function copyPrepContent(item) {
+  const text = String(item?.content || "");
+  if (!text.trim()) { notify("这条素材还没有正文内容"); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    notify("素材正文已复制");
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    notify(copied ? "素材正文已复制" : "复制失败，请展开素材后手动复制");
+  }
+}
 function buildGenPrompt(desc, jobId) {
   const job = jobId ? state.jobs.find((j) => String(j.id) === String(jobId)) : null;
   const role = job ? [job.company, job.role].filter(Boolean).join(" · ") : "（未指定，按通用校招场景处理）";
@@ -299,7 +320,7 @@ function openPrep(i) { $("prepId").value = i?.id || ""; $("prepCategory").value 
 
 function exportData() { const blob = new Blob([JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), jobs: state.jobs, prep: state.prep, nextId: state.nextId }, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `秋招台账备份_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href); notify("数据备份已导出"); }
 function importData() { const input = document.createElement("input"); input.type = "file"; input.accept = "application/json"; input.onchange = () => { const file = input.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const d = JSON.parse(reader.result); if (!Array.isArray(d.jobs) || !Array.isArray(d.prep)) throw new Error(); state.jobs = migrate(d.jobs); state.prep = d.prep; state.nextId = d.nextId || Math.max(0, ...state.jobs.map((x) => x.id), ...state.prep.map((x) => x.id)) + 1; save(); render(); notify("数据备份已导入"); } catch { alert("备份文件格式不正确。"); } }; reader.readAsText(file); }; input.click(); }
-function resetData() { if (!confirm("确定清空所有数据吗？此操作不可撤销，建议先导出备份。")) return; state.jobs = []; state.prep = []; state.nextId = 1; if (state.expanded) state.expanded.clear(); save(); render(); notify("已清空所有数据"); }
+function resetData() { if (!confirm("确定清空所有数据吗？此操作不可撤销，建议先导出备份。")) return; state.jobs = []; state.prep = []; state.nextId = 1; if (state.expanded) state.expanded.clear(); if (state.prepExpanded) state.prepExpanded.clear(); save(); render(); notify("已清空所有数据"); }
 function applySearch(value) { state.search = value; renderApplied(); const input = $("searchInput"); if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } }
 
 document.addEventListener("click", (e) => {
@@ -315,6 +336,8 @@ document.addEventListener("click", (e) => {
   if (b.dataset.close) closeModal(b.dataset.close);
   if (b.dataset.prepCategory) { state.prepCategory = b.dataset.prepCategory; render(); }
   if (b.hasAttribute("data-add-prep")) openPrep();
+  if (b.dataset.togglePrep) { const id = Number(b.dataset.togglePrep); state.prepExpanded.has(id) ? state.prepExpanded.delete(id) : state.prepExpanded.add(id); render(); }
+  if (b.dataset.copyPrep) { const i = state.prep.find((x) => x.id === Number(b.dataset.copyPrep)); if (i) copyPrepContent(i); }
   if (b.dataset.editPrep) { const i = state.prep.find((x) => x.id === Number(b.dataset.editPrep)); if (i) openPrep(i); }
   if (b.dataset.deletePrep) { const id = Number(b.dataset.deletePrep), i = state.prep.find((x) => x.id === id); if (i && confirm(`确认删除“${i.title}”吗？`)) { state.prep = state.prep.filter((x) => x.id !== id); save(); render(); notify("面试素材已删除"); } }
   if (b.id === "exportData") exportData(); if (b.id === "importData") importData(); if (b.id === "resetData") resetData();
