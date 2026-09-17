@@ -171,7 +171,6 @@ function renderDashboard() {
   const todos = upcoming.length ? upcoming.map(j => { const m = deadlineMeta(j.assessmentDeadline); return `<button type="button" class="todo ${m.cls}" data-open-job="${j.id}" aria-label="查看${esc(j.company)}的${esc(j.role || "岗位")}投递记录"><span class="todo-time"><b>${j.assessmentDeadline ? dateText(j.assessmentDeadline) : "待填写"}</b><span>${m.label}</span></span><span><strong>${esc(j.company)} · ${esc(j.role || "岗位待补充")}</strong><small>${esc(DEADLINE_LABELS[j.status])} · ${esc(j.status)}</small></span><span class="todo-arrow" aria-hidden="true">›</span></button>`; }).join("") : '<div class="empty compact"><p>暂无待办节点</p></div>';
   $("app").innerHTML = `<section class="dashboard-head"><div><span>全部投递统计</span><button class="text" data-go="wishlist">待投递 ${wishlist.length} 个 ›</button></div><button class="primary" data-add-job="applied">＋ 添加投递</button></section>
     <section class="stats">${metrics.map(([key, title, value, note], i) => metricStat(key, i + 1, title, value, note, animate)).join("")}</section>
-    <p class="calendar-summary stats-note">完成数量以已保存记录为准；历史遗漏可在岗位编辑中「补记一场」。</p>
     <section class="grid-2 dashboard-grid">${card("投递日历", "点击日期，查看当天投递的岗位", calendarHtml(applied))}${card("近期事项", "点击卡片，定位并展开对应岗位", `<div class="todo-list">${todos}</div>`)}</section>
     ${card("行业投递分布", "按全部已投递岗位统计；未填写行业计入未分类。", industryChart(applied))}
     ${card("最近投递", "按投递日期从新到旧排列", jobTable(sortApplications(applied).slice(0, 6), true), '<button class="text" data-go="applied">管理记录 ›</button>')}${backupBar()}`;
@@ -192,7 +191,7 @@ function jobTable(jobs, compact = false) {
   const actions = (j) => `<div class="actions"><button class="action-btn" data-edit-job="${j.id}">Edit</button>${compact ? "" : `<button class="action-btn delete" data-delete-job="${j.id}">Delete</button>`}</div>`;
   const rows = jobs.map((j) => { const detail = jobDetailHtml(j); return `<tr data-job-id="${j.id}" tabindex="-1" class="${state.focusedJob === j.id ? "job-highlight" : ""}"><td>${dateText(j.applicationDate)}</td><td><div class="company"><b>${esc(j.company)}${toggle(j)}</b><span>${esc(j.role || "岗位待补充")}</span></div></td><td>${esc(j.city || "—")}</td><td>${pill(j.status)}</td><td>${nodeTime(j)}</td><td>${esc(j.preference || "—")}</td><td>${actions(j)}</td></tr><tr class="detail-row" ${state.expanded.has(j.id) ? "" : "hidden"}><td colspan="7">${detail}</td></tr>`; }).join("");
   const mobile = jobs.map((j) => { const detail = jobDetailHtml(j); return `<article data-job-id="${j.id}" tabindex="-1" class="mobile-card ${state.focusedJob === j.id ? "job-highlight" : ""}"><div>${pill(j.status)}<small>${dateText(j.applicationDate)}</small></div><h4>${esc(j.company)}${toggle(j)}</h4><p>${esc(j.role || "岗位待补充")}</p><div class="job-detail" ${state.expanded.has(j.id) ? "" : "hidden"}>${detail}</div>${actions(j)}</article>`; }).join("");
-  return `<div class="table-wrap"><table><thead><tr><th>投递日期</th><th>公司 / 岗位</th><th>地点</th><th>当前进度</th><th>节点时间</th><th>期望值</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table><div class="mobile-list">${mobile}</div></div>`;
+  return `${compact ? "" : `<div class="mobile-date-sort">投递日期${dateSortButton()}</div>`}<div class="table-wrap"><table><thead><tr><th${compact ? "" : ` aria-sort="${state.sortOrder === "asc" ? "ascending" : "descending"}"`}>投递日期${compact ? "" : dateSortButton()}</th><th>公司 / 岗位</th><th>地点</th><th>当前进度</th><th>节点时间</th><th>期望值</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table><div class="mobile-list">${mobile}</div></div>`;
 }
 
 function filteredApplications() {
@@ -208,8 +207,12 @@ function renderApplied() {
   const all = state.jobs.filter(j => j.bucket === "applied"), jobs = filteredApplications();
   const filterOptions = ["全部状态", ...STATUSES];
   const labels = { assessment: "已完成测评", ai: "已完成AI面", human: "已完成人工面试", active: "进行中岗位", offer: "已获Offer" };
-  const context = state.metric !== "all" ? `<p class="filter-context">来自看板：${labels[state.metric]}${state.metric === "human" ? ` · 以下${jobs.length}个岗位累计完成${jobs.reduce((n, j) => n + humanEvents(j).length, 0)}场，展开详情查看各场记录` : ""}</p>` : "";
-  const filters = `<div class="filters record-filters"><label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" value="${esc(state.search)}" placeholder="搜索公司、岗位、城市或行业" aria-label="搜索投递记录" autocomplete="off" /></label><select id="statusFilter" aria-label="按当前进度筛选">${filterOptions.map(s => `<option ${s === state.filter ? "selected" : ""}>${esc(s)}</option>`).join("")}</select><label class="date-filter"><span>投递开始日期</span><input type="date" id="dateFrom" value="${state.dateFrom}" /></label><label class="date-filter"><span>投递结束日期</span><input type="date" id="dateTo" value="${state.dateTo}" /></label><select id="sortOrder" aria-label="投递时间排序"><option value="desc" ${state.sortOrder === "desc" ? "selected" : ""}>最新投递在前</option><option value="asc" ${state.sortOrder === "asc" ? "selected" : ""}>最早投递在前</option></select><button class="secondary" id="clearRecordFilters">清除筛选</button></div>`;
+  const contextParts = [];
+  if (state.metric !== "all") contextParts.push(`来自看板：${labels[state.metric]}${state.metric === "human" ? ` · 以下${jobs.length}个岗位累计完成${jobs.reduce((n, j) => n + humanEvents(j).length, 0)}场，展开详情查看各场记录` : ""}`);
+  if (state.dateFrom || state.dateTo) contextParts.push(`投递日期：${esc(state.dateFrom || "不限")} ${state.dateFrom === state.dateTo ? "" : `至 ${esc(state.dateTo || "不限")}`}`);
+  const hasFilters = contextParts.length || state.search || state.filter !== "全部状态";
+  const context = hasFilters ? `<div class="record-filter-summary">${contextParts.map(x => `<span>${x}</span>`).join("")}<button class="text" id="clearRecordFilters">清除筛选</button></div>` : "";
+  const filters = `<div class="filters record-filters"><label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" value="${esc(state.search)}" placeholder="搜索公司、岗位、城市或行业" aria-label="搜索投递记录" autocomplete="off" /></label><select id="statusFilter" aria-label="按当前进度筛选">${filterOptions.map(s => `<option ${s === state.filter ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div>`;
   const invalid = state.dateFrom && state.dateTo && state.dateFrom > state.dateTo;
   $("app").innerHTML = card(`投递记录 · ${jobs.length} / ${all.length}`, `符合条件${jobs.length}条 / 全部${all.length}条；未填写日期的记录排序时置于末尾。`, `${filters}${context}${invalid ? '<p class="filter-error" role="alert">开始日期不能晚于结束日期，请调整日期范围。</p>' : ""}${jobs.length ? jobTable(jobs) : empty("没有找到匹配记录", "请更换关键词或筛选条件。")}`, '<button class="primary" data-add-job="applied">＋ 新增投递</button>') + backupBar();
 }
@@ -383,6 +386,13 @@ function applySearch(value) { if (state.page !== "applied") return; state.search
 
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-toggle-date-sort")) {
+    state.sortOrder = state.sortOrder === "desc" ? "asc" : "desc";
+    renderApplied();
+    const button = [...document.querySelectorAll("[data-toggle-date-sort]")].find(el => el.getClientRects().length);
+    if (button) button.focus({ preventScroll: true });
+    return;
+  }
   if (b.dataset.openJob) { openAppliedRecord(Number(b.dataset.openJob)); return; }
   if (b.dataset.metric) { resetRecordFilters(); state.metric = b.dataset.metric; showApplied(); return; }
   if (b.dataset.calendarDay) { resetRecordFilters(); state.dateFrom = state.dateTo = b.dataset.calendarDay; showApplied(); return; }
@@ -449,8 +459,6 @@ $("app").addEventListener("input", (e) => {
   if (e.target.id === "searchInput" && !composing) { const value = e.target.value; clearTimeout(searchTimer); searchTimer = setTimeout(() => applySearch(value), 260); }
 });
 $("app").addEventListener("change", (e) => {
-  const filterFields = { dateFrom: "dateFrom", dateTo: "dateTo", sortOrder: "sortOrder" };
-  if (filterFields[e.target.id]) { state[filterFields[e.target.id]] = e.target.value; renderApplied(); }
   if (e.target.id === "calendarMonth" && /^\d{4}-\d{2}$/.test(e.target.value)) { state.calendarMonth = e.target.value; render(); }
   if (e.target.id === "statusFilter") { state.filter = e.target.value; renderApplied(); }
   if (e.target.id === "cfgProvider") { const p = PROVIDERS.find((x) => x.id === e.target.value); if (p?.baseUrl) { $("cfgBaseUrl").value = p.baseUrl; $("cfgModel").value = p.model; } }
@@ -515,12 +523,23 @@ function sortApplications(jobs, order = "desc") {
 }
 function resetRecordFilters() { clearTimeout(searchTimer); Object.assign(state, { search: "", filter: "全部状态", dateFrom: "", dateTo: "", sortOrder: "desc", metric: "all", industryFilter: "", focusedJob: null }); }
 function showApplied() { state.page = "applied"; $("sidebar").classList.remove("open"); render(); window.scrollTo(0, 0); }
+let highlightTimer;
+function dateSortButton() {
+  const asc = state.sortOrder === "asc", label = asc ? "当前正序，点击倒序" : "当前倒序，点击正序";
+  return `<button type="button" class="date-sort-button ${asc ? "sort-asc" : "sort-desc"}" data-toggle-date-sort title="${label}" aria-label="按投递日期排序：${label}"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path class="sort-up" d="M6 16V4M2.5 7.5 6 4l3.5 3.5"/><path class="sort-down" d="M14 4v12m-3.5-3.5L14 16l3.5-3.5"/></svg></button>`;
+}
 function openAppliedRecord(id) {
   if (!state.jobs.some(j => j.id === id && j.bucket === "applied")) return;
+  clearTimeout(highlightTimer);
   resetRecordFilters(); state.focusedJob = id; state.expanded.add(id); showApplied();
   requestAnimationFrame(() => {
     const target = [...document.querySelectorAll(`[data-job-id="${id}"]`)].find(el => el.getClientRects().length);
     if (target) { target.focus({ preventScroll: true }); target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); }
+    highlightTimer = setTimeout(() => {
+      if (state.focusedJob !== id) return;
+      state.focusedJob = null;
+      document.querySelectorAll(`[data-job-id="${id}"]`).forEach(el => el.classList.remove("job-highlight"));
+    }, 1500);
   });
 }
 function shiftCalendar(step) { const [y, m] = state.calendarMonth.split("-").map(Number); state.calendarMonth = localDate(new Date(y, m - 1 + step, 1)).slice(0, 7); }
@@ -538,3 +557,4 @@ $("completionRows").addEventListener("change", e => {
 });
 
 init();
+
