@@ -123,3 +123,37 @@ button.detail-switch[aria-expanded="true"] .switch-thumb{transform:translateX(16
 button.detail-switch:hover{box-shadow:0 0 0 3px #8a68a71a}
 button.detail-switch:focus-visible{outline:2px solid #76558f;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){button.detail-switch,button.detail-switch .switch-thumb{transition:none}}
+
+/* Calendar, cumulative activity and record drill-through */
+button.stat{text-align:left;color:var(--ink);width:100%;transition:box-shadow .2s,transform .2s}
+button.stat:hover{box-shadow:0 14px 30px rgba(76,40,93,.18);transform:translateY(-2px)}
+.stat small{white-space:normal;line-height:1.5}
+.dashboard-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.calendar-controls{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:15px}
+.calendar-controls input{min-width:0;max-width:180px;padding:9px;border:1px solid var(--line);border-radius:10px;color:var(--plum);background:#fff}
+.calendar-controls .secondary{min-width:38px;padding:0 10px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.calendar-weekday{text-align:center;font-size:11px;color:var(--muted);padding:6px 0}
+.calendar-day{display:grid;align-content:center;justify-items:center;gap:5px;min-width:0;min-height:62px;padding:5px 1px;border:1px solid transparent;border-radius:10px;color:var(--muted);background:rgba(247,243,250,.8)}
+.calendar-day b{font-size:13px;font-weight:600}.calendar-day small{font-size:10px;white-space:nowrap}
+.calendar-day.has-applications{background:#e9def3;color:var(--plum)}.calendar-day.today{border-color:var(--violet)}
+.calendar-day:hover{border-color:var(--violet);background:#ded0ed}
+.calendar-summary{margin:14px 0 0;font-size:12px;color:var(--muted);line-height:1.6}
+.stats-note{margin:-7px 0 18px}
+button.todo{width:100%;text-align:left;color:var(--ink);transition:box-shadow .2s}
+button.todo:hover{box-shadow:inset 0 0 0 1px var(--violet)}
+.todo-arrow{color:var(--violet);font-size:22px}
+.dashboard-grid .todo-list{max-height:430px}
+.record-filters{width:100%;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}
+.date-filter{display:grid;gap:6px;min-width:0;color:var(--muted);font-size:11px}
+.date-filter input{width:100%;min-width:0;height:46px;padding:0 12px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink)}
+.record-filters>.secondary{min-height:46px}.filter-context{padding:12px;background:var(--lavender);border-radius:10px;font-size:12px;line-height:1.7}.filter-error{color:#be123c;font-size:13px}
+[data-job-id]{scroll-margin-top:105px;outline-offset:-3px}
+tr.job-highlight td,.mobile-card.job-highlight{background:#eee1f8;border-top:2px solid #b597cf;border-bottom:2px solid #b597cf}
+.completion-editor{margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+.completion-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.completion-heading h3{font-size:14px;margin:0}
+.completion-editor p{font-size:12px;color:var(--muted);line-height:1.7}
+.completion-row{display:grid;grid-template-columns:100px minmax(0,1fr) auto;gap:9px;align-items:end;margin-top:12px}
+.completion-row label{min-width:0}.completion-row input,.completion-row select{min-width:0;width:100%}.completion-row .action-btn{margin-bottom:2px}
+@media(max-width:1100px){.dashboard-grid{grid-template-columns:1fr}.record-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){button.todo{grid-template-columns:96px minmax(0,1fr) 14px}.record-filters{grid-template-columns:1fr}.calendar-controls{gap:5px}.calendar-controls input{max-width:160px}.calendar-day{min-height:54px}.completion-row{grid-template-columns:90px minmax(0,1fr)}.completion-row .action-btn{grid-column:2;justify-self:end}.completion-heading{flex-wrap:wrap}}

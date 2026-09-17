@@ -64,7 +64,7 @@
             <label><span>公司名称 <b>*</b></span><input id="company" required placeholder="例如：华为" /></label>
             <label><span>岗位名称</span><input list="roleOptions" id="role" placeholder="例如：产品经理" /></label>
             <label><span>公司性质</span><select id="companyType"><option value="">请选择</option><option>民企</option><option>国企</option><option>央企</option><option>外企</option><option>合资企业</option><option>事业单位</option><option>社会组织</option><option>其他</option></select></label>
-            <label class="applied-only"><span>公司行业</span><select id="industry"><option value="">请选择</option><option>互联网 / 软件服务</option><option>人工智能</option><option>电子 / 半导体</option><option>通信</option><option>汽车 / 新能源汽车</option><option>制造业 / 工业设备</option><option>能源 / 电力</option><option>金融</option><option>物流 / 供应链</option><option>零售 / 电商</option><option>快消 / 食品饮料</option><option>农林牧渔</option><option>医药 / 医疗健康</option><option>房地产 / 商业管理</option><option>咨询 / 专业服务</option><option>教育 / 培训</option><option>文化 / 传媒 / 娱乐</option><option>旅游 / 酒店</option><option>公共服务</option><option>综合集团</option><option>其他</option></select></label>
+            <label class="applied-only"><span>公司行业</span><input id="industry" list="industryOptions" placeholder="选择行业或自行输入" /><datalist id="industryOptions"><option value="消费电子 / 智能硬件"></option><option value="软件服务 / 人工智能 / 网络安全"></option><option value="通信 / ICT"></option><option value="汽车 / 汽车零部件"></option><option value="新能源 / 电力"></option><option value="工业制造 / 机械设备"></option><option value="互联网 / 电商平台"></option><option value="快消 / 食品饮料"></option><option value="美妆 / 个护"></option><option value="母婴 / 玩具 / 生活用品"></option><option value="服装 / 运动户外"></option><option value="医药 / 医疗健康"></option><option value="物流 / 交通运输"></option><option value="咨询 / 专业服务"></option><option value="金融"></option><option value="房地产 / 商业管理"></option><option value="旅游 / 酒店"></option><option value="农业 / 农食产业"></option><option value="其他"></option></datalist></label>
           <label class="applied-only"><span>工作地点</span><input list="cityOptions" id="city" placeholder="城市或办公地" /></label>
             <label class="applied-only"><span>投递日期</span><input id="applicationDate" type="date" /></label>
             <label class="applied-only"><span>当前进度</span><select id="status"></select></label>
@@ -79,8 +79,12 @@
             <label class="wide applied-only"><span>岗位要求 / JD</span><textarea id="description" rows="4"></textarea></label>
             <label class="wide applied-only"><span>网上面试信息</span><textarea id="interviewInfo" rows="4"></textarea></label>
             <label class="wide applied-only"><span>投递规则</span><textarea id="applicationRule" rows="2"></textarea></label>
-            <label class="wide applied-only"><span>我的经历匹配</span><textarea id="experienceSummary" rows="3"></textarea></label>
           </div>
+          <section class="completion-editor applied-only">
+            <div class="completion-heading"><h3>已完成测评 / 面试记录</h3><button type="button" class="secondary" id="addCompletion">＋ 补记一场</button></div>
+            <p>一条代表一次已完成的测评或面试。相同轮次再次参加可另加一条；“已完成 → 通过”不会重复计数。可补记或删除误记，点击保存后生效。</p>
+            <div id="completionRows"></div>
+          </section>
         </div>
         <footer><button type="button" class="secondary" data-close="jobModal">取消</button><button class="primary" type="submit">保存记录</button></footer>
       </form>
@@ -125,3 +129,4 @@
 <datalist id="roleOptions"><option value="管培生"></option><option value="产品经理"></option><option value="产品运营"></option><option value="用户运营"></option><option value="市场营销"></option><option value="品牌管理"></option><option value="商务拓展"></option><option value="销售"></option><option value="售前顾问"></option><option value="项目管理"></option><option value="战略规划"></option><option value="行业研究"></option><option value="数据分析"></option><option value="供应链管理"></option><option value="采购"></option><option value="人力资源"></option><option value="财务管理"></option><option value="综合管理"></option></datalist>
 </body>
 </html>
+
