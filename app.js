@@ -149,7 +149,12 @@ const CITY_COORDS = {
   "太原":[112.55,37.87],"沈阳":[123.43,41.80],"大连":[121.61,38.91],"长春":[125.32,43.82],"哈尔滨":[126.53,45.80],
   "南昌":[115.86,28.68],"赣州":[114.94,25.83],"南宁":[108.37,22.82],"桂林":[110.29,25.27],"海口":[110.20,20.04],"三亚":[109.51,18.25],
   "昆明":[102.83,24.88],"贵阳":[106.63,26.65],"兰州":[103.83,36.06],"西宁":[101.78,36.62],"银川":[106.23,38.49],
-  "乌鲁木齐":[87.62,43.83],"拉萨":[91.11,29.65],"呼和浩特":[111.75,40.84],"香港":[114.17,22.32],"澳门":[113.54,22.20],"台北":[121.57,25.03]
+  "乌鲁木齐":[87.62,43.83],"拉萨":[91.11,29.65],"呼和浩特":[111.75,40.84],"香港":[114.17,22.32],"澳门":[113.54,22.20],"台北":[121.57,25.03],
+  "河北":[114.48,38.03],"山西":[112.30,37.62],"辽宁":[122.61,41.30],"吉林":[126.19,43.67],"黑龙江":[127.69,47.86],
+  "江苏":[119.49,32.98],"浙江":[120.10,29.18],"安徽":[117.23,31.82],"福建":[118.01,26.08],"江西":[115.72,27.61],
+  "山东":[118.19,36.38],"河南":[113.62,33.88],"湖北":[112.27,30.98],"湖南":[112.98,27.61],"广东":[113.43,23.33],
+  "广西":[108.79,23.83],"海南":[109.84,19.20],"四川":[102.69,30.63],"贵州":[106.88,26.82],"云南":[101.49,24.97],
+  "陕西":[108.95,35.19],"甘肃":[103.83,36.06],"青海":[96.04,35.67],"宁夏":[106.17,37.27],"新疆":[85.29,41.12],"西藏":[88.79,31.68],"内蒙古":[114.08,44.09],"台湾":[121.01,23.73]
 };
 let chinaGeoData;
 function cleanCity(value) {
@@ -181,6 +186,11 @@ function featurePath(feature) {
   if (type === "MultiPolygon") return coordinates.flatMap(polygon => polygon.map(ringPath)).join("");
   return "";
 }
+function provinceShortName(name) {
+  return String(name || "")
+    .replace(/维吾尔自治区|壮族自治区|回族自治区|特别行政区|自治区|省|市/g, "")
+    .replace("内蒙古", "内蒙古");
+}
 function mapEmpty(text) { return `<div class="map-empty"><span aria-hidden="true">⌖</span><p>${esc(text)}</p></div>`; }
 async function renderJobMap(jobs) {
   const host = $("jobLocationMap"); if (!host) return;
@@ -190,13 +200,20 @@ async function renderJobMap(jobs) {
     chinaGeoData ||= await fetch("./assets/china-provinces.geojson").then(r => { if (!r.ok) throw new Error(); return r.json(); });
     if (!$("jobLocationMap") || host !== $("jobLocationMap")) return;
     const regions = chinaGeoData.features.map(f => `<path class="china-region" d="${featurePath(f)}"><title>${esc(f.properties?.name || "")}</title></path>`).join("");
+    const provinceLabels = chinaGeoData.features.map(f => {
+      const center = f.properties?.center || f.properties?.centroid;
+      if (!Array.isArray(center)) return "";
+      const [x, y] = mapProject(center);
+      return `<text class="province-label" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${esc(provinceShortName(f.properties?.name))}</text>`;
+    }).join("");
     const dots = [...groups].map(([city, cityJobs]) => {
       const [x, y] = mapProject(CITY_COORDS[city]), companies = [...new Set(cityJobs.map(j => j.company).filter(Boolean))];
       const label = `${city}：${cityJobs.length} 个岗位；${companies.join("、")}`;
-      return `<button type="button" class="map-marker" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)} · ${cityJobs.length} 个岗位</strong><em>${companies.map(esc).join("<br>")}</em></span></button>`;
+      const visualSize = Math.min(30, 13 + Math.sqrt(Math.max(0, cityJobs.length - 1)) * 4.5);
+      const lightness = Math.max(39, 64 - Math.min(cityJobs.length - 1, 9) * 2.8);
+      return `<button type="button" class="map-marker" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%;--marker-size:${visualSize.toFixed(1)}px;--dot-color:hsl(274 38% ${lightness.toFixed(1)}%)" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)} · ${cityJobs.length} 个岗位</strong><em>${companies.map(esc).join("<br>")}</em></span></button>`;
     }).join("");
-    const note = unresolved.length ? `<p class="map-note">暂未定位：${unresolved.map(esc).join("、")}。建议填写具体城市名称。</p>` : "";
-    host.innerHTML = `<div class="china-map-stage"><svg class="china-map" viewBox="0 0 900 560" role="img" aria-label="中国投递地点地图"><g>${regions}</g></svg><div class="map-markers">${dots}</div></div><div class="map-legend"><span><i></i>投递城市</span><b>${groups.size} 个城市 · ${[...groups.values()].reduce((n, a) => n + a.length, 0)} 个岗位</b></div>${note}`;
+    host.innerHTML = `<div class="china-map-stage"><svg class="china-map" viewBox="0 0 900 560" role="img" aria-label="中国投递地点地图"><g>${regions}</g><g aria-hidden="true">${provinceLabels}</g></svg><div class="map-markers">${dots}</div></div><div class="map-legend"><span><i></i>投递越多，圆点越大、颜色越深</span><b>${groups.size} 个城市 · ${[...groups.values()].reduce((n, a) => n + a.length, 0)} 个岗位</b></div>`;
   } catch { host.innerHTML = mapEmpty("地图加载失败，请刷新页面重试。"); }
 }
 
