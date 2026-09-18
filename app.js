@@ -175,6 +175,10 @@ function cityDistribution(jobs) {
   });
   return { groups, unresolved: [...new Set(unresolved)] };
 }
+function isMapActiveJob(job) {
+  const status = String(job.status || "");
+  return !status.endsWith("挂") && !["流程终止", "已放弃"].includes(status);
+}
 function mapProject([lon, lat]) {
   const width = 900, height = 560, lonMin = 73, lonMax = 136, latMin = 17, latMax = 54;
   return [(lon - lonMin) / (lonMax - lonMin) * width, (latMax - lat) / (latMax - latMin) * height];
@@ -212,7 +216,8 @@ async function renderJobMap(jobs) {
       const visualSize = Math.min(30, 13 + Math.sqrt(Math.max(0, cityJobs.length - 1)) * 4.5);
       const lightness = Math.max(39, 64 - Math.min(cityJobs.length - 1, 9) * 2.8);
       const edgeClass = x < 145 ? " map-left" : x > 755 ? " map-right" : "";
-      return `<button type="button" class="map-marker${edgeClass}" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%;--marker-size:${visualSize.toFixed(1)}px;--dot-color:hsl(274 38% ${lightness.toFixed(1)}%)" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)}<span> · ${cityJobs.length} 个岗位</span></strong><em>${companies.map(esc).join("<br>")}</em></span></button>`;
+      const listClass = companies.length > 7 ? " company-list many" : " company-list";
+      return `<button type="button" class="map-marker${edgeClass}" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%;--marker-size:${visualSize.toFixed(1)}px;--dot-color:hsl(274 38% ${lightness.toFixed(1)}%)" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)}<span> · ${cityJobs.length} 个岗位</span></strong><em class="${listClass.trim()}">${companies.map(name => `<span>${esc(name)}</span>`).join("")}</em></span></button>`;
     }).join("");
     host.innerHTML = `<div class="china-map-stage"><svg class="china-map" viewBox="0 0 900 560" role="img" aria-label="中国投递地点地图"><g>${regions}</g><g aria-hidden="true">${provinceLabels}</g></svg><div class="map-markers">${dots}</div></div><div class="map-legend"><span><i></i>投递越多，圆点越大、颜色越深</span><b>${groups.size} 个城市 · ${[...groups.values()].reduce((n, a) => n + a.length, 0)} 个岗位</b></div>`;
   } catch { host.innerHTML = mapEmpty("地图加载失败，请刷新页面重试。"); }
@@ -253,10 +258,10 @@ function renderDashboard() {
     <section class="stats">${metrics.map(([key, title, value, note], i) => metricStat(key, i + 1, title, value, note, animate)).join("")}</section>
     <section class="grid-2 dashboard-grid">${card("投递日历", "点击日期，查看当天投递的岗位", calendarHtml(applied))}${card("近期事项", "点击卡片，定位并展开对应岗位", `<div class="todo-list">${todos}</div>`)}</section>
     ${card("行业投递分布", "按全部已投递岗位统计；未填写行业计入未分类。", industryChart(applied))}
-    ${card("投递地点分布", "根据工作地点自动落点；悬停或点击城市点查看公司。", '<div id="jobLocationMap" class="job-location-map" aria-live="polite"><div class="map-loading">正在绘制地图…</div></div>')}
+    ${card("投递地点分布", "仅统计仍在推进的岗位；悬停或点击城市点查看公司。", '<div id="jobLocationMap" class="job-location-map" aria-live="polite"><div class="map-loading">正在绘制地图…</div></div>')}
     ${card("最近投递", "按投递日期从新到旧排列", jobTable(sortApplications(applied).slice(0, 6), true), '<button class="text" data-go="applied">管理记录 ›</button>')}${backupBar()}`;
   if (animate) playDashboardAnimations();
-  renderJobMap(applied);
+  renderJobMap(applied.filter(isMapActiveJob));
 }
 
 function backupBar() { return `<div class="backup-bar"><button class="secondary" id="exportData">导出数据备份</button><button class="secondary" id="importData">导入备份</button><button class="secondary" id="resetData">清空所有数据</button></div>`; }
