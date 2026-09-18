@@ -211,7 +211,8 @@ async function renderJobMap(jobs) {
       const label = `${city}：${cityJobs.length} 个岗位；${companies.join("、")}`;
       const visualSize = Math.min(30, 13 + Math.sqrt(Math.max(0, cityJobs.length - 1)) * 4.5);
       const lightness = Math.max(39, 64 - Math.min(cityJobs.length - 1, 9) * 2.8);
-      return `<button type="button" class="map-marker" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%;--marker-size:${visualSize.toFixed(1)}px;--dot-color:hsl(274 38% ${lightness.toFixed(1)}%)" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)} · ${cityJobs.length} 个岗位</strong><em>${companies.map(esc).join("<br>")}</em></span></button>`;
+      const edgeClass = x < 145 ? " map-left" : x > 755 ? " map-right" : "";
+      return `<button type="button" class="map-marker${edgeClass}" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%;--marker-size:${visualSize.toFixed(1)}px;--dot-color:hsl(274 38% ${lightness.toFixed(1)}%)" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)}<span> · ${cityJobs.length} 个岗位</span></strong><em>${companies.map(esc).join("<br>")}</em></span></button>`;
     }).join("");
     host.innerHTML = `<div class="china-map-stage"><svg class="china-map" viewBox="0 0 900 560" role="img" aria-label="中国投递地点地图"><g>${regions}</g><g aria-hidden="true">${provinceLabels}</g></svg><div class="map-markers">${dots}</div></div><div class="map-legend"><span><i></i>投递越多，圆点越大、颜色越深</span><b>${groups.size} 个城市 · ${[...groups.values()].reduce((n, a) => n + a.length, 0)} 个岗位</b></div>`;
   } catch { host.innerHTML = mapEmpty("地图加载失败，请刷新页面重试。"); }
