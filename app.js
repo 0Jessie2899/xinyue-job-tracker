@@ -138,6 +138,68 @@ function industryChart(jobs) {
   }).join("") + '</div>';
 }
 
+const CITY_COORDS = {
+  "北京":[116.41,39.90],"上海":[121.47,31.23],"天津":[117.20,39.08],"重庆":[106.55,29.56],
+  "广州":[113.26,23.13],"深圳":[114.06,22.55],"珠海":[113.58,22.27],"佛山":[113.12,23.02],"东莞":[113.75,23.02],"惠州":[114.42,23.11],
+  "成都":[104.07,30.57],"绵阳":[104.68,31.47],"杭州":[120.16,30.27],"宁波":[121.55,29.87],"温州":[120.70,28.00],"嘉兴":[120.76,30.75],
+  "南京":[118.80,32.06],"苏州":[120.59,31.30],"无锡":[120.31,31.49],"常州":[119.97,31.81],"南通":[120.89,31.98],
+  "武汉":[114.31,30.59],"宜昌":[111.29,30.69],"长沙":[112.94,28.23],"郑州":[113.63,34.75],"洛阳":[112.45,34.62],
+  "西安":[108.94,34.34],"合肥":[117.23,31.82],"厦门":[118.09,24.48],"福州":[119.30,26.08],"泉州":[118.68,24.87],
+  "青岛":[120.38,36.07],"济南":[117.12,36.65],"烟台":[121.45,37.46],"石家庄":[114.51,38.04],"保定":[115.46,38.87],
+  "太原":[112.55,37.87],"沈阳":[123.43,41.80],"大连":[121.61,38.91],"长春":[125.32,43.82],"哈尔滨":[126.53,45.80],
+  "南昌":[115.86,28.68],"赣州":[114.94,25.83],"南宁":[108.37,22.82],"桂林":[110.29,25.27],"海口":[110.20,20.04],"三亚":[109.51,18.25],
+  "昆明":[102.83,24.88],"贵阳":[106.63,26.65],"兰州":[103.83,36.06],"西宁":[101.78,36.62],"银川":[106.23,38.49],
+  "乌鲁木齐":[87.62,43.83],"拉萨":[91.11,29.65],"呼和浩特":[111.75,40.84],"香港":[114.17,22.32],"澳门":[113.54,22.20],"台北":[121.57,25.03]
+};
+let chinaGeoData;
+function cleanCity(value) {
+  const raw = String(value || "").trim();
+  if (!raw || /全国|远程|海外/.test(raw)) return "";
+  const part = raw.split(/[、,，/／;；|]/)[0].trim();
+  const exact = Object.keys(CITY_COORDS).find(name => part.includes(name));
+  return exact || part.replace(/(市|地区|自治州|特别行政区)$/g, "");
+}
+function cityDistribution(jobs) {
+  const groups = new Map(), unresolved = [];
+  jobs.forEach(job => {
+    const city = cleanCity(job.city);
+    if (!city) return;
+    if (!CITY_COORDS[city]) { unresolved.push(job.city); return; }
+    if (!groups.has(city)) groups.set(city, []);
+    groups.get(city).push(job);
+  });
+  return { groups, unresolved: [...new Set(unresolved)] };
+}
+function mapProject([lon, lat]) {
+  const width = 900, height = 560, lonMin = 73, lonMax = 136, latMin = 17, latMax = 54;
+  return [(lon - lonMin) / (lonMax - lonMin) * width, (latMax - lat) / (latMax - latMin) * height];
+}
+function ringPath(ring) { return ring.map((point, i) => `${i ? "L" : "M"}${mapProject(point).map(n => n.toFixed(1)).join(" ")}`).join("") + "Z"; }
+function featurePath(feature) {
+  const { type, coordinates } = feature.geometry || {};
+  if (type === "Polygon") return coordinates.map(ringPath).join("");
+  if (type === "MultiPolygon") return coordinates.flatMap(polygon => polygon.map(ringPath)).join("");
+  return "";
+}
+function mapEmpty(text) { return `<div class="map-empty"><span aria-hidden="true">⌖</span><p>${esc(text)}</p></div>`; }
+async function renderJobMap(jobs) {
+  const host = $("jobLocationMap"); if (!host) return;
+  const { groups, unresolved } = cityDistribution(jobs);
+  if (!groups.size) { host.innerHTML = mapEmpty(jobs.length ? "填写可识别的工作城市后，将在这里自动落点。" : "添加投递记录后，将在这里查看城市分布。"); return; }
+  try {
+    chinaGeoData ||= await fetch("./assets/china-provinces.geojson").then(r => { if (!r.ok) throw new Error(); return r.json(); });
+    if (!$("jobLocationMap") || host !== $("jobLocationMap")) return;
+    const regions = chinaGeoData.features.map(f => `<path class="china-region" d="${featurePath(f)}"><title>${esc(f.properties?.name || "")}</title></path>`).join("");
+    const dots = [...groups].map(([city, cityJobs]) => {
+      const [x, y] = mapProject(CITY_COORDS[city]), companies = [...new Set(cityJobs.map(j => j.company).filter(Boolean))];
+      const label = `${city}：${cityJobs.length} 个岗位；${companies.join("、")}`;
+      return `<button type="button" class="map-marker" style="--x:${(x / 9).toFixed(3)}%;--y:${(y / 5.6).toFixed(3)}%" aria-label="${esc(label)}"><span class="marker-pulse" aria-hidden="true"></span><span class="marker-dot" aria-hidden="true"></span><span class="map-tooltip" role="tooltip"><strong>${esc(city)} · ${cityJobs.length} 个岗位</strong><em>${companies.map(esc).join("<br>")}</em></span></button>`;
+    }).join("");
+    const note = unresolved.length ? `<p class="map-note">暂未定位：${unresolved.map(esc).join("、")}。建议填写具体城市名称。</p>` : "";
+    host.innerHTML = `<div class="china-map-stage"><svg class="china-map" viewBox="0 0 900 560" role="img" aria-label="中国投递地点地图"><g>${regions}</g></svg><div class="map-markers">${dots}</div></div><div class="map-legend"><span><i></i>投递城市</span><b>${groups.size} 个城市 · ${[...groups.values()].reduce((n, a) => n + a.length, 0)} 个岗位</b></div>${note}`;
+  } catch { host.innerHTML = mapEmpty("地图加载失败，请刷新页面重试。"); }
+}
+
 function metricStat(key, no, title, value, note, animate) {
   return `<button type="button" class="stat${animate ? " rise" : ""}" data-metric="${key}" style="--i:${no}" aria-label="${title} ${value}，查看对应投递记录"><i>${String(no).padStart(2, "0")}</i><div><span>${title}</span><strong data-count="${value}">${value}</strong><small>${note} · 查看 ›</small></div></button>`;
 }
@@ -173,8 +235,10 @@ function renderDashboard() {
     <section class="stats">${metrics.map(([key, title, value, note], i) => metricStat(key, i + 1, title, value, note, animate)).join("")}</section>
     <section class="grid-2 dashboard-grid">${card("投递日历", "点击日期，查看当天投递的岗位", calendarHtml(applied))}${card("近期事项", "点击卡片，定位并展开对应岗位", `<div class="todo-list">${todos}</div>`)}</section>
     ${card("行业投递分布", "按全部已投递岗位统计；未填写行业计入未分类。", industryChart(applied))}
+    ${card("投递地点分布", "根据工作地点自动落点；悬停或点击城市点查看公司。", '<div id="jobLocationMap" class="job-location-map" aria-live="polite"><div class="map-loading">正在绘制地图…</div></div>')}
     ${card("最近投递", "按投递日期从新到旧排列", jobTable(sortApplications(applied).slice(0, 6), true), '<button class="text" data-go="applied">管理记录 ›</button>')}${backupBar()}`;
   if (animate) playDashboardAnimations();
+  renderJobMap(applied);
 }
 
 function backupBar() { return `<div class="backup-bar"><button class="secondary" id="exportData">导出数据备份</button><button class="secondary" id="importData">导入备份</button><button class="secondary" id="resetData">清空所有数据</button></div>`; }
@@ -557,4 +621,3 @@ $("completionRows").addEventListener("change", e => {
 });
 
 init();
-
