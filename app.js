@@ -64,7 +64,7 @@ function migrate(jobs) { return jobs.map((j) => {
   job.completionEvents = completionEvents(job);
   return job;
 }); }
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ jobs: state.jobs, prep: state.prep, nextId: state.nextId })); }
+async function save() { await Cloud.save(); }
 function notify(message) { const n = $("notice"); n.textContent = `✓ ${message}`; n.hidden = false; clearTimeout(notify.timer); notify.timer = setTimeout(() => { n.hidden = true; }, 2800); }
 function tone(status) { if (status?.includes("挂") || ["流程终止", "已放弃"].includes(status)) return "danger"; if (status === "已录用" || status?.includes("通过") || status?.startsWith("已完成")) return "success"; if (status?.startsWith("待") || status?.includes("面")) return "warning"; return ""; }
 function pill(status) { return `<span class="pill ${tone(status)}">${esc(status || "—")}</span>`; }
@@ -104,6 +104,8 @@ let animKey = "";
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function render() {
+  if (!Cloud.loaded()) return;
+  if (!Cloud.owner() && state.page === "aiconfig") state.page = "dashboard";
   const scrollTop = window.scrollY;
   if (state.page !== "dashboard") animKey = "";
   $("pageTitle").textContent = TITLES[state.page];
@@ -340,6 +342,7 @@ function updateDetailSwitches(kind, id, open) {
 
 function emptyJob(bucket) { const base = Object.fromEntries(JOB_FIELDS.map((f) => [f, f === "receivedInterview" ? false : ""])); return { id: "", bucket, ...base, status: bucket === "applied" ? "已投递" : "待投递", applicationDate: bucket === "applied" ? localDate() : "", stageHistory: [] }; }
 function openJob(job) {
+  if (!Cloud.editable()) return;
   const v = job || emptyJob("applied"), bucket = v.bucket || "applied", edit = Boolean(v.id);
   $("jobModal").dataset.bucket = bucket;
   $("jobModalTitle").textContent = edit ? (bucket === "wishlist" ? "编辑待投目标" : "编辑投递记录") : (bucket === "wishlist" ? "添加待投目标" : "新增投递");
@@ -421,6 +424,7 @@ function buildGenPrompt(desc, jobId) {
   return PROMPTS[state.prepCategory]({ topic: desc || "（未填写）", role, jd: job?.description || "（未提供 JD）", raw: desc || "（未提供，请基于主题合理补充，并标注需要我确认的地方）" });
 }
 function openAIGen() {
+  if (!Cloud.editable()) return;
   const jobs = state.jobs.filter((j) => j.bucket === "applied");
   $("aiGenJob").innerHTML = `<option value="">不关联</option>` + jobs.map((j) => `<option value="${j.id}">${esc([j.company, j.role].filter(Boolean).join(" · "))}</option>`).join("");
   $("aiDesc").value = ""; $("aiGenResult").value = "";
@@ -449,6 +453,7 @@ function saveAIGen() {
   ta.value = text; closeModal("aiGenModal"); notify("已填入素材编辑框，可调整后保存");
 }
 function renderAIConfig() {
+  if (!Cloud.owner()) return;
   const c = getAI(), ready = aiReady(c);
   const providers = PROVIDERS.map((p) => `<option value="${p.id}" ${p.id === c.provider ? "selected" : ""}>${esc(p.name)}</option>`).join("");
   const masked = maskKey(c.apiKey);
@@ -464,14 +469,20 @@ function renderAIConfig() {
     </div>
   `) + backupBar();
 }
-function openPrep(i) { $("prepId").value = i?.id || ""; $("prepCategory").value = i?.category || state.prepCategory; $("prepTitle").value = i?.title || ""; $("prepContent").value = i?.content || ""; $("prepModal").hidden = false; }
+function openPrep(i) { if (!Cloud.editable()) return; $("prepId").value = i?.id || ""; $("prepCategory").value = i?.category || state.prepCategory; $("prepTitle").value = i?.title || ""; $("prepContent").value = i?.content || ""; $("prepModal").hidden = false; }
 
 function exportData() { const blob = new Blob([JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), jobs: state.jobs, prep: state.prep, nextId: state.nextId }, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `秋招台账备份_${localDate()}.json`; a.click(); URL.revokeObjectURL(a.href); notify("数据备份已导出"); }
-function importData() { const input = document.createElement("input"); input.type = "file"; input.accept = "application/json"; input.onchange = () => { const file = input.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const d = JSON.parse(reader.result); if (!Array.isArray(d.jobs) || !Array.isArray(d.prep)) throw new Error(); state.jobs = migrate(d.jobs); state.prep = d.prep; state.nextId = d.nextId || Math.max(0, ...state.jobs.map((x) => x.id), ...state.prep.map((x) => x.id)) + 1; save(); render(); notify("数据备份已导入"); } catch { alert("备份文件格式不正确。"); } }; reader.readAsText(file); }; input.click(); }
-function resetData() { if (!confirm("确定清空所有数据吗？此操作不可撤销，建议先导出备份。")) return; state.jobs = []; state.prep = []; state.nextId = 1; if (state.expanded) state.expanded.clear(); if (state.prepExpanded) state.prepExpanded.clear(); save(); render(); notify("已清空所有数据"); }
+function importData() { Cloud.importFile(); }
+async function resetData() {
+  if (!Cloud.editable() || !confirm("确定清空云端所有岗位和素材吗？其他设备也会读取到清空后的台账，建议先导出备份。")) return;
+  state.jobs = []; state.prep = []; state.nextId = 1;
+  state.expanded.clear(); state.prepExpanded.clear();
+  await save(); render(); notify("云端台账已清空");
+}
 function applySearch(value) { if (state.page !== "applied") return; state.search = value; renderApplied(); const input = $("searchInput"); if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } }
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
+  try {
   const b = e.target.closest("button"); if (!b) return;
   if (b.hasAttribute("data-toggle-date-sort")) {
     state.sortOrder = state.sortOrder === "desc" ? "asc" : "desc";
@@ -493,22 +504,23 @@ document.addEventListener("click", (e) => {
   if (b.dataset.addJob) openJob(emptyJob(b.dataset.addJob));
   if (b.dataset.toggleJob) { const id = Number(b.dataset.toggleJob); state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); updateDetailSwitches("job", id, state.expanded.has(id)); }
   if (b.dataset.editJob) { const j = state.jobs.find((x) => x.id === Number(b.dataset.editJob)); if (j) openJob(j); }
-  if (b.dataset.deleteJob) { const id = Number(b.dataset.deleteJob), j = state.jobs.find((x) => x.id === id); if (j && confirm(`确认删除“${j.company}”吗？`)) { state.jobs = state.jobs.filter((x) => x.id !== id); save(); render(); notify("岗位记录已删除"); } }
-  if (b.dataset.convert) { const j = state.jobs.find((x) => x.id === Number(b.dataset.convert)); if (j) { j.bucket = "applied"; j.status = "已投递"; j.applicationDate = localDate(); save(); render(); notify("已转入投递记录"); } }
+  if (b.dataset.deleteJob) { const id = Number(b.dataset.deleteJob), j = state.jobs.find((x) => x.id === id); if (j && confirm(`确认删除“${j.company}”吗？`)) { state.jobs = state.jobs.filter((x) => x.id !== id); await save(); render(); notify("岗位记录已删除"); } }
+  if (b.dataset.convert) { const j = state.jobs.find((x) => x.id === Number(b.dataset.convert)); if (j) { j.bucket = "applied"; j.status = "已投递"; j.applicationDate = localDate(); await save(); render(); notify("已转入投递记录"); } }
   if (b.dataset.close) closeModal(b.dataset.close);
   if (b.dataset.prepCategory) { state.prepCategory = b.dataset.prepCategory; render(); }
   if (b.hasAttribute("data-add-prep")) openPrep();
   if (b.dataset.togglePrep) { const id = Number(b.dataset.togglePrep); state.prepExpanded.has(id) ? state.prepExpanded.delete(id) : state.prepExpanded.add(id); updateDetailSwitches("prep", id, state.prepExpanded.has(id)); }
   if (b.dataset.copyPrep) { const i = state.prep.find((x) => x.id === Number(b.dataset.copyPrep)); if (i) copyPrepContent(i); }
   if (b.dataset.editPrep) { const i = state.prep.find((x) => x.id === Number(b.dataset.editPrep)); if (i) openPrep(i); }
-  if (b.dataset.deletePrep) { const id = Number(b.dataset.deletePrep), i = state.prep.find((x) => x.id === id); if (i && confirm(`确认删除“${i.title}”吗？`)) { state.prep = state.prep.filter((x) => x.id !== id); save(); render(); notify("面试素材已删除"); } }
-  if (b.id === "exportData") exportData(); if (b.id === "importData") importData(); if (b.id === "resetData") resetData();
+  if (b.dataset.deletePrep) { const id = Number(b.dataset.deletePrep), i = state.prep.find((x) => x.id === id); if (i && confirm(`确认删除“${i.title}”吗？`)) { state.prep = state.prep.filter((x) => x.id !== id); await save(); render(); notify("面试素材已删除"); } }
+  if (b.id === "exportData") exportData(); if (b.id === "importData") importData(); if (b.id === "resetData") await resetData();
   if (b.id === "prepCatBtn") openAIGen();
   if (b.id === "aiGenGenerate") generateAIGen();
   if (b.id === "aiGenSave") saveAIGen();
   if (b.id === "aiGenCopy" || b.id === "aiGenCopy2") copyAIGen();
   if (b.id === "cfgSave") { const entered = $("cfgApiKey").value.trim(); const prev = getAI(); const next = { provider: $("cfgProvider").value, baseUrl: $("cfgBaseUrl").value.trim(), model: $("cfgModel").value.trim(), apiKey: entered || prev.apiKey }; setAI(next); render(); notify(entered ? "AI 配置已保存" : "配置已更新（Key 留空未改动）"); }
   if (b.id === "cfgClear") { const c = getAI(); c.apiKey = ""; setAI(c); render(); notify("已清除 API Key"); }
+  } catch (error) { render(); Cloud.report(error); }
 });
 $("enterTracker").addEventListener("click", () => { $("cover").classList.add("cover-hidden"); setTimeout(() => { $("cover").hidden = true; }, 520); });
 $("menuButton").addEventListener("click", () => $("sidebar").classList.toggle("open"));
@@ -516,8 +528,10 @@ $("status").innerHTML = STATUSES.map((s) => `<option>${s}</option>`).join("");
 $("status").addEventListener("change", syncFormRules);
 $("receivedInterview").addEventListener("change", syncFormRules);
 $("nextStage").addEventListener("change", syncNextStageTime);
-$("jobForm").addEventListener("submit", (e) => {
+$("jobForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (!Cloud.editable()) return;
+  try {
   const v = collectJob(), id = Number($("jobId").value);
   const existing = id ? state.jobs.find((j) => j.id === id) : null;
   const errors = validateJob(v, existing);
@@ -537,9 +551,19 @@ $("jobForm").addEventListener("submit", (e) => {
   delete v.nextStage; delete v.nextStageTime;
   if (id) state.jobs = state.jobs.map((j) => j.id === id ? { ...j, ...v } : j);
   else state.jobs.push({ id: state.nextId++, ...v, stageHistory: v.stageHistory || [] });
-  save(); closeModal("jobModal"); render(); notify(id ? "岗位记录已更新" : "岗位记录已添加");
+  await save(); closeModal("jobModal"); render(); notify(id ? "岗位记录已保存到云端" : "岗位记录已添加到云端");
+  } catch (error) { closeModal("jobModal"); render(); Cloud.report(error); }
 });
-$("prepForm").addEventListener("submit", (e) => { e.preventDefault(); const id = Number($("prepId").value), v = { category: $("prepCategory").value, title: $("prepTitle").value.trim(), content: $("prepContent").value.trim() || null }; if (id) state.prep = state.prep.map((i) => i.id === id ? { ...i, ...v } : i); else state.prep.push({ id: state.nextId++, ...v }); save(); closeModal("prepModal"); render(); notify("面试素材已保存"); });
+$("prepForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!Cloud.editable()) return;
+  try {
+    const id = Number($("prepId").value), v = { category: $("prepCategory").value, title: $("prepTitle").value.trim(), content: $("prepContent").value.trim() || null };
+    if (id) state.prep = state.prep.map((i) => i.id === id ? { ...i, ...v } : i);
+    else state.prep.push({ id: state.nextId++, ...v });
+    await save(); closeModal("prepModal"); render(); notify("面试素材已保存到云端");
+  } catch (error) { closeModal("prepModal"); render(); Cloud.report(error); }
+});
 $("app").addEventListener("compositionstart", (e) => { if (e.target.id === "searchInput") composing = true; });
 $("app").addEventListener("compositionend", (e) => { if (e.target.id === "searchInput") { composing = false; clearTimeout(searchTimer); applySearch(e.target.value); } });
 $("app").addEventListener("input", (e) => {
@@ -552,14 +576,7 @@ $("app").addEventListener("change", (e) => {
 });
 // AI 配置改用 05 板块内联表单（renderAIConfig），原 aiModal 弹窗已移除
 
-function init() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) { const d = JSON.parse(saved); state = { ...state, ...d, jobs: migrate(d.jobs || []) }; save(); }
-    else { state = { ...state, jobs: [], prep: [], nextId: 1 }; save(); }
-    render();
-  } catch { $("app").innerHTML = empty("数据加载失败", "请刷新页面重试。"); }
-}
+function init() { Cloud.start().catch(Cloud.report); }
 // Completion records are independent of the current progress. Legacy data only
 // contributes explicit completed/result stages; later rounds imply no earlier ones.
 const COMPLETION_STAGES = ["测评", "AI面", "业务面", "一面", "二面", "终面", "HR面"];

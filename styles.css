@@ -4,6 +4,35 @@
   --shadow:0 24px 70px rgba(74,44,91,.12); --radius:22px;
   --font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
 }
+/* Cloud account, migration and save state; keep the established violet theme. */
+.cloud-panel{padding:20px 32px 0}
+.cloud-status{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.8)}
+.cloud-status b{display:block;font-size:14px;margin-bottom:5px}
+.cloud-status span{display:block;color:var(--muted);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.cloud-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex-shrink:0}
+.cloud-actions button{font-size:12px;min-height:36px}
+.cloud-error{border-color:#bb6464;background:#fff6f6}
+.cloud-error span,.cloud-error-text{color:#9b3636}
+.cloud-error-text{line-height:1.7;font-size:13px}
+.cloud-migration{margin-top:12px;padding:20px;border:1px solid #d4c1e5;border-radius:16px;background:#f2eaf8}
+.cloud-migration p{line-height:1.7;color:var(--muted);font-size:13px}
+.cloud-login{max-width:460px;margin:25px auto;padding:34px!important}
+.cloud-login h2{font-size:23px;margin:20px 0 12px}
+.cloud-login>p,.cloud-login small{color:var(--muted);line-height:1.8;font-size:13px}
+.cloud-login form{display:grid;gap:18px;margin:25px 0 20px}
+.cloud-login label,.cloud-login label span{display:block}
+.cloud-login label span{font-size:13px;margin-bottom:8px}
+.cloud-login input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;background:white}
+.cloud-login-mark{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--plum);color:white;font-size:22px}
+.cloud-viewer-list{padding:0;list-style:none}
+.cloud-viewer-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:13px}
+.cloud-viewer-list code{overflow-wrap:anywhere}
+#cloudShareForm{display:grid;gap:16px}
+.cloud-locked .sidebar nav,.cloud-locked .bottom-nav{visibility:hidden}
+.cloud-viewer [data-add-job],.cloud-viewer [data-edit-job],.cloud-viewer [data-delete-job],.cloud-viewer [data-convert],.cloud-viewer [data-add-prep],.cloud-viewer [data-edit-prep],.cloud-viewer [data-delete-prep],.cloud-viewer #importData,.cloud-viewer #resetData,.cloud-viewer [data-page="aiconfig"]{display:none!important}
+.cloud-busy #jobForm button[type="submit"],.cloud-busy #prepForm button[type="submit"]{opacity:.5;pointer-events:none}
+button:disabled{cursor:wait;opacity:.55}
+@media(max-width:700px){.cloud-panel{padding:14px 16px 0}.cloud-status{align-items:flex-start;flex-direction:column}.cloud-actions{flex-shrink:1}.cloud-login{padding:25px!important;margin:10px auto}.cloud-migration{padding:16px}}
 *{box-sizing:border-box} html{min-width:320px;background:#f7f2fa} body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--font);background:linear-gradient(135deg,#fbf8fc 0%,#f2ebf7 48%,#f8f3fa 100%)}
 button,input,select,textarea{font:inherit} button{cursor:pointer} button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(118,80,160,.26);outline-offset:2px}[hidden]{display:none!important}
 

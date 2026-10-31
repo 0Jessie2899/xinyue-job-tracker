@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#6d4a86" />
   <title>Jessie的求职之旅</title>
   <meta name="description" content="个人秋招投递、进度与面试准备台账" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=cloud-1" />
 </head>
 <body>
   <section class="cover" id="cover" aria-label="Jessie的求职之旅封面">
@@ -40,6 +40,7 @@
         <h1 id="pageTitle">求职看板</h1>
         <div class="profile"><span>J</span><div><b>Jessie</b><small>个人求职空间</small></div></div>
       </header>
+      <section id="cloudPanel" class="cloud-panel" aria-label="云端连接与账号"></section>
       <div id="notice" class="notice" hidden aria-live="polite"></div>
       <div id="app" class="content"><div class="loading">正在加载台账数据…</div></div>
     </main>
@@ -124,7 +125,23 @@
     </section>
   </div>
 
-  <script src="./app.js"></script>
+  <div class="modal centered" id="cloudShareModal" hidden>
+    <button class="backdrop" data-close="cloudShareModal" aria-label="关闭"></button>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="cloudShareTitle">
+      <header><div><small>SHARING</small><h2 id="cloudShareTitle">朋友查看授权</h2></div><button class="icon" data-close="cloudShareModal" aria-label="关闭">×</button></header>
+      <div class="form-scroll single">
+        <p>先在 Supabase 的 Authentication → Users 中为朋友创建账号，再将该账号的 User UID 填入下方。获得授权后，对方可以查看和导出全部岗位与面试素材，不能修改。</p>
+        <form id="cloudShareForm"><label><span>朋友的 User UID</span><input id="cloudViewerUid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required /></label><button class="primary" type="submit">授予只读权限</button></form>
+        <p id="cloudShareError" class="cloud-error-text" role="alert"></p>
+        <h3>已授权账号</h3><ul id="cloudViewerList" class="cloud-viewer-list"></ul>
+        <p class="ai-note">朋友使用同一个网页地址登录。撤销授权会阻止后续读取，已经看到或下载的数据无法收回。</p>
+      </div>
+    </section>
+  </div>
+  <script src="./vendor/supabase-2.118.0.js"></script>
+  <script src="./cloud-store.js?v=cloud-1"></script>
+  <script src="./cloud-ui.js?v=cloud-1"></script>
+  <script src="./app.js?v=cloud-1"></script>
 <datalist id="cityOptions"><option value="北京"></option><option value="上海"></option><option value="广州"></option><option value="深圳"></option><option value="成都"></option><option value="杭州"></option><option value="南京"></option><option value="武汉"></option><option value="苏州"></option><option value="西安"></option><option value="重庆"></option><option value="天津"></option><option value="长沙"></option><option value="郑州"></option><option value="合肥"></option><option value="厦门"></option><option value="青岛"></option><option value="全国"></option><option value="远程"></option></datalist>
 <datalist id="roleOptions"><option value="管培生"></option><option value="产品经理"></option><option value="产品运营"></option><option value="用户运营"></option><option value="市场营销"></option><option value="品牌管理"></option><option value="商务拓展"></option><option value="销售"></option><option value="售前顾问"></option><option value="项目管理"></option><option value="战略规划"></option><option value="行业研究"></option><option value="数据分析"></option><option value="供应链管理"></option><option value="采购"></option><option value="人力资源"></option><option value="财务管理"></option><option value="综合管理"></option></datalist>
 </body>
